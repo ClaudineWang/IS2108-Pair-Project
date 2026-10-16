@@ -1,0 +1,12 @@
+<head>
+    <title> Admin Panel </title>
+</head>
+<body> 
+    <h1> {{ page_title }}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">{{ submit_button_text }}</button>
+        <a href="{% url 'adminpanel:product_list' %}">Cancel</a>
+    </form> 
+</body>

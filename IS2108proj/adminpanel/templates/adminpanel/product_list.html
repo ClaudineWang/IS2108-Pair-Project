@@ -1,0 +1,127 @@
+
+<h1>Product Catalogue</h1>
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    .status-visible {
+        color: green;
+        font-weight: bold;
+    }
+
+    .status-hidden {
+        color: red;
+        font-weight: bold;
+    }
+</style>
+<form method="get">
+    <input
+        type="text"
+        name="search"
+        placeholder="Search by product name"
+        value="{{ search_query }}"
+    >
+
+    <select name="category">
+        <option value="">All categories</option>
+
+        {% for category in categories %}
+            <option
+                value="{{ category.id }}"
+                {% if category_filter == category.id|stringformat:"s" %}
+                    selected
+                {% endif %}
+            >
+                {{ category.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="roast_level">
+        <option value="">All roast levels</option>
+
+        <option value="light"
+            {% if roast_filter == "light" %}selected{% endif %}>
+            Light
+        </option>
+
+        <option value="medium"
+            {% if roast_filter == "medium" %}selected{% endif %}>
+            Medium
+        </option>
+
+        <option value="dark"
+            {% if roast_filter == "dark" %}selected{% endif %}>
+            Dark
+        </option>
+    </select>
+
+    <select name="caffeine_type">
+        <option value="">All caffeine types</option>
+
+        <option value="caffeinated"
+            {% if caffeine_filter == "caffeinated" %}selected{% endif %}>
+            Caffeinated
+        </option>
+
+        <option value="decaf"
+            {% if caffeine_filter == "decaf" %}selected{% endif %}>
+            Decaf
+        </option>
+    </select>
+
+    <button type="submit">Search</button>
+
+    <a href="{% url 'adminpanel:product_list' %}">
+        Reset
+    </a>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Roast Level</th>
+        <th>Caffeine Type</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    {% for product in products %}
+    <tr>
+        <td>{{ product.id }}</td>
+        <td>{{ product.name }}</td>
+        <td>{{ product.category.name }}</td>
+        <td>{{ product.get_roast_level_display }}</td>
+        <td>{{ product.get_caffeine_type_display }}</td>
+        <td>{% if product.is_visible %}
+            <span class="status-visible">Visible</span>
+            {% else %}
+            <span class="status-hidden">Not Visible</span>
+            {% endif %}
+        </td>
+        <td>
+            <a href="{% url 'adminpanel:product_update' product.id %}">View/ Edit</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'adminpanel:product_add' %}">Add New Product</a>
