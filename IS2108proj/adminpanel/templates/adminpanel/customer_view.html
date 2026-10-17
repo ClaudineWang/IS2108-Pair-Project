@@ -1,0 +1,92 @@
+<head>
+    <title> Admin Panel </title>
+</head>
+
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+</style>
+
+<body>
+    <h1> {{ page_title }}</h1>
+    <p>
+        Customer:
+        {{ customer.user.get_full_name }}
+    </p>
+
+    <p>
+        Email:
+        {{ customer.user.email }}
+    </p>
+
+    <p>
+        Phone Number:
+        {{ customer.phone_number }}
+    </p>
+
+    <p> Delivery Address: 
+        {{ customer.delivery_address }}
+    </p>
+    <p> 
+        Registration Date:
+        {{ customer.created_at|date:"F j, Y" }}
+    </p>
+<hr>
+<p>
+    <Strong> Order Summary: </Strong>
+</p>
+    <p>
+        Total Orders:
+        {{ customer.total_order }}
+    </p>
+
+    <p>
+        Total Spending:
+        ${{ customer.total_spending }}
+    </p>
+        {{ product.stock_status }}
+    </p>
+
+    <h3>
+     Recent Orders:
+    </h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th> Order Type </th>
+                <th>Total Amount</th>
+                <th>Delivery Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in customer_recent_orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.created_at|date:"F j, Y" }}</td>
+                <td>{{ order.get_order_type_display }}</td>
+                <td>${{ order.grand_total }}</td>
+                <td>{{ order.get_delivery_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No recent orders found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<a href="{% url 'adminpanel:customer_list' %}">Cancel</a>

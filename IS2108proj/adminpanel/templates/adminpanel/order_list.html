@@ -1,0 +1,90 @@
+<h1>Order Managment</h1>
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+</style>
+<form method="get">
+    <input
+        type="text"
+        name="search"
+        placeholder="Search by Order ID or Customer Name"
+        value="{{ search_query }}"
+    >
+
+    <select name="delivery_status">
+        <option value="">All Delivery Statuses</option>
+
+        {% for status in delivery_statuses %}
+            <option value="{{ status.0 }}"
+                {% if delivery_status_filter == status.0 %}selected{% endif %}>
+                {{ status.1 }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <input type="date" name="date" value="{{ date_filter }}">
+
+    <select name="order_type">
+        <option value="">All Order Types</option>
+
+        <option value="subscription"
+            {% if order_type_filter == "subscription" %}selected{% endif %}>
+            Subscription
+        </option>
+        <option value="one_time"
+            {% if order_type_filter == "one_time" %}selected{% endif %}>
+            One-time
+        </option>
+    </select>
+       
+    <button type="submit">Search</button>
+
+    <a href="{% url 'adminpanel:order_list' %}">
+        Reset
+    </a>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Customer Name</th>
+        <th>Date</th>
+        <th>Grand Total</th>
+        <th>Delivery Status</th>
+        <th>Order Type</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    {% for order in orders %}
+    <tr>
+        <td>{{ order.id }}</td>
+        <td>{{ order.customer.user.get_full_name }}</td>
+        <td>{{ order.created_at | date:"d M Y" }}</td>
+        <td>${{ order.grand_total|floatformat:2 }}</td>
+        <td>{{ order.get_delivery_status_display }}</td>
+        <td>{{ order.get_order_type_display }}</td>
+        <td>
+            <a href="{% url 'adminpanel:order_update' order.id %}">View/ Edit</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+

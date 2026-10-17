@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ page_title }}</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .save-button {
+            margin-top: 20px;
+            background-color: #198754;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .cancel-link {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>{{ page_title }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <h2>Bundle Details</h2>
+
+        {{ subscription_bundle_form.non_field_errors }}
+        {{ subscription_bundle_form.as_p }}
+
+        {{ bundle_item_formset.management_form }}
+
+        <h2>Current Products</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for form in bundle_item_formset %}
+                    {% if form.instance.pk %}
+                        <tr id="item-row-{{ forloop.counter }}">
+                            <td>
+                                {{ form.id }}
+                                {{ form.product.errors }}
+                                {{ form.product }}
+                            </td>
+
+                            <td>
+                                {{ form.quantity.errors }}
+                                {{ form.quantity }}
+                            </td>
+
+                            <td>
+                                {{ form.DELETE.as_hidden }}
+
+                                <button
+                                    type="button"
+                                    class="delete-button"
+                                    onclick="deleteItem(
+                                        'item-row-{{ forloop.counter }}',
+                                        'id_{{ form.prefix }}-DELETE'
+                                    )"
+                                >
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Add New Product</h2>
+
+        {% for form in bundle_item_formset %}
+            {% if not form.instance.pk %}
+                {{ form.as_p }}
+            {% endif %}
+        {% endfor %}
+
+        <button type="submit" class="save-button">
+            {{ submit_button_text }}
+        </button>
+
+        <a
+            class="cancel-link"
+            href="{% url 'adminpanel:subscription_bundle_list' %}"
+        >
+            Cancel
+        </a>
+    </form>
+
+    <script>
+        function deleteItem(rowId, deleteInputId) {
+            document.getElementById(deleteInputId).value = "on";
+            document.getElementById(rowId).style.display = "none";
+        }
+    </script>
+
+</body>
+</html>

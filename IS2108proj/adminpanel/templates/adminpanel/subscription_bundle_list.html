@@ -1,0 +1,106 @@
+
+<h1>Subscription Bundles</h1>
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+    .status-active {
+        color: green;
+        font-weight: bold;
+    }
+
+    .status-inactive {
+        color: red;
+        font-weight: bold;
+    }
+
+
+</style>
+<form method="get">
+    <input
+        type="text"
+        name="search"
+        placeholder="Search by bundle name"
+        value="{{ search_query }}"
+    >
+
+    <select name="billing_frequencies">
+        <option value="">All Billing Frequencies</option>
+
+        {% for frequency in billing_frequencies %}
+            <option
+                value="{{ frequency }}"
+                {% if billing_frequency_filter == frequency %}selected
+                {% endif %}
+            >
+                {{ frequency }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="is_active">
+        <option value="">All Statuses</option>
+
+        <option value="true"
+            {% if is_active_filter == "true" %}selected{% endif %}>
+            Active
+        </option>
+
+        <option value="false"
+            {% if is_active_filter == "false" %}selected{% endif %}>
+            Inactive
+        </option>
+    </select>
+
+    <button type="submit">Search</button>
+
+    <a href="{% url 'adminpanel:subscription_bundle_list' %}">
+        Reset
+    </a>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Price Per Delivery</th>
+        <th>Billing Frequency</th>
+        <th>Number of Items</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    {% for subscription_bundle in subscription_bundles %}
+    <tr>
+        <td>{{ subscription_bundle.name }}</td>
+        <td>${{ subscription_bundle.price_per_delivery|floatformat:2 }}</td>
+        <td>{{ subscription_bundle.billing_frequency }}</td>
+        <td>{{ subscription_bundle.total_items }}</td>
+        <td>{% if subscription_bundle.is_active %}
+            <span class="status-active">Active</span>
+            {% else %}
+            <span class="status-inactive">Inactive</span>
+            {% endif %}
+        </td>
+        <td>
+            <a href="{% url 'adminpanel:subscription_bundle_update' subscription_bundle.id %}">View/ Edit</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'adminpanel:subscription_bundle_add' %}">Add New Subscription Bundle</a>

@@ -1,0 +1,91 @@
+<head>
+    <title> Admin Panel </title>
+</head>
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+</style>
+<body>
+    <h1> {{ page_title }}</h1>
+    <p>
+        Customer Name:
+        {{ order.customer.user.get_full_name }}
+    </p>
+
+    <p>
+        Customer Email:
+        {{ order.customer.user.email }}
+    </p>
+
+    <p>
+        Phone Number:
+        {{ order.customer.phone_number }}
+    </p>
+
+    <p>
+        Address:
+        {{ order.delivery_address }}
+        
+    </p>
+    <p>
+        Order Date:
+        {{ order.created_at | date:"d M Y" }}
+    </p>
+    <p> 
+        Order Type:
+        {{ order.get_order_type_display }}
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Current Unit Price</th>
+                <th>Sub Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.price_at_purchase|floatformat:2 }}</td>
+                <td>${{ item.subtotal|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p> 
+        Total Price:
+        ${{ order.total_amount|floatformat:2 }}
+    </p>
+    <p>
+        Delivery Fee:
+        ${{ order.delivery_fee|floatformat:2 }}
+    </p>
+    <p> 
+        Grand Total:
+        ${{ order.grand_total|floatformat:2 }}
+    </p>
+
+
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">{{ submit_button_text }}</button>
+        <a href="{% url 'adminpanel:order_list' %}">Cancel</a>
+    </form>
+</body>
