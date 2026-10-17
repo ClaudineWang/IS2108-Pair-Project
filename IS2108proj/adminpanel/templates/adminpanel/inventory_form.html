@@ -1,0 +1,38 @@
+<head>
+    <title> Admin Panel </title>
+</head>
+
+<body>
+    <h1> {{ page_title }}</h1>
+    <p>
+        Product:
+        {{ product.name }}
+    </p>
+
+    <p>
+        Category:
+        {{ product.category.name }}
+    </p>
+
+    <p>
+        Stock status:
+        {{ product.stock_status }}
+    </p>
+
+    <p>
+        Visibility:
+        {% if product.is_visible %}
+        Visible
+        {% else %}
+        Not Visible
+        {% endif %}
+    </p>
+
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">{{ submit_button_text }}</button>
+        <a href="{% url 'adminpanel:inventory_list' %}">Cancel</a>
+    </form>
+</body>
