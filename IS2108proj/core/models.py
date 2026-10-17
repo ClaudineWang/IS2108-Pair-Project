@@ -8,7 +8,6 @@ class CustomerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='customer_profile')
     phone_number = models.CharField(max_length=20, blank=True)
     delivery_address = models.TextField(blank=True)
-    delivery_address = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -69,7 +68,7 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.PROTECT, related_name='orders')
-    #subscription = models.ForeignKey('Subscription', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    subscription = models.ForeignKey('CustomerSubscription', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_address = models.TextField()
@@ -128,4 +127,67 @@ class BundleItem(models.Model):
     ]
     def __str__(self):
         return f"{self.product.name} in {self.subscription_bundle.name}"
+
+class QuestionnaireResponse(models.Model):
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='questionnaire_responses')
+    preferred_roast = models.CharField(max_length=50)
+    preferred_flavour = models.CharField(max_length=50)
+    preferred_brewing_method = models.CharField(max_length=50)
+    preferred_caffeine_type = models.CharField(max_length=50)
+    preferred_category = models.CharField(max_length=50, blank=True, null=True)
+    predicted_category = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Quiz by {self.customer.username} on {self.created_at.strftime('%Y-%m-%d')}"
+
+
+class Cart(models.Model):
+    customer = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cart')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Cart for {self.customer.username}"
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name} in Cart"
+
+
+class CustomerSubscription(models.Model):
+    STATUS_CHOICES = [
+        ('Active', 'Active'),
+        ('Paused', 'Paused'),
+        ('Cancelled', 'Cancelled'),
+    ]
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
+    bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name='customer_subscriptions')
+    start_date = models.DateTimeField(auto_now_add=True)
+    next_delivery_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+
+    def __str__(self):
+        return f"{self.customer.username} - {self.bundle.name} ({self.status})"
+
+
+class Review(models.Model):
+    STATUS_CHOICES = [
+        ('Visible', 'Visible'),
+        ('Hidden', 'Hidden'),
+    ]
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.PositiveIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    comment = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Visible')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review ({self.rating}/5) by {self.customer.username} for {self.product.name}"
     
