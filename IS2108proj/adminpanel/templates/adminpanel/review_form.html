@@ -1,0 +1,43 @@
+<head>
+    <title> Admin Panel </title>
+</head>
+
+<body>
+    <h1> {{ page_title }}</h1>
+    <p>
+        Product Name:
+        {{ review.product.name }}
+    </p>
+
+    <p>
+        Product ID:
+        {{ review.product.id }}
+    </p>
+
+    <p>
+        Customer Name:
+        {{ review.customer.user.get_full_name }}
+    </p>
+
+    <p>
+        Rating:
+        {{ review.rating }}
+    </p>
+    <p>
+        Date:
+        {{ review.created_at | date:"d M Y" }}
+    </p>
+
+<hr>
+<p>
+    <Strong>Comment:<br></Strong>
+    {{ review.comment }}
+</p>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">{{ submit_button_text }}</button>
+        <a href="{% url 'adminpanel:review_list' %}">Cancel</a>
+    </form>
+</body>

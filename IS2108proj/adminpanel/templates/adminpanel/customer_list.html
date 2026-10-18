@@ -1,4 +1,3 @@
-
 <h1>Customer Details</h1>
 <style>
     table {
@@ -6,7 +5,8 @@
         border-collapse: collapse;
     }
 
-    th, td {
+    th,
+    td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #ddd;
@@ -17,12 +17,8 @@
     }
 </style>
 <form method="get">
-    <input
-        type="text"
-        name="search"
-        placeholder="Search by customer ID, name, username, or email"
-        value="{{ search_query }}"
-    >
+    <input type="text" name="search" placeholder="Search by customer ID, name, username, or email"
+        value="{{ search_query }}">
 
     <button type="submit">Search</button>
 
@@ -33,33 +29,34 @@
 
 <table>
     <thead>
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Phone</th>
-        <th>Total Orders</th>
-        <th>Total Spending</th>
-        <th>Actions</th>
-    </tr>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Total Orders</th>
+            <th>Total Spending</th>
+            <th>Actions</th>
+        </tr>
     </thead>
     <tbody>
 
-    {% for customer in customers %}
-    <tr>
-        <td>{{ customer.id }}</td>
-        <td>{{ customer.user.first_name }} {{ customer.user.last_name }}</td>
-        <td>{{ customer.user.email }}</td>
-        <td>{{ customer.phone_number }}</td>
-        <td>{{ customer.total_order }}</td>
-        <td>{{ customer.total_spending }}</td>
-        <td>
-            <a href="{% url 'adminpanel:customer_view' customer.id %}">View</a>
-        </td>
-    </tr>
-    {% endfor %}
+        {% for customer in customers %}
+        <tr>
+            <td>{{ customer.id }}</td>
+            <td>{{ customer.user.first_name }} {{ customer.user.last_name }}</td>
+            <td>{{ customer.user.email }}</td>
+            <td>{{ customer.phone_number }}</td>
+            <td>{{ customer.total_order }}</td>
+            <td>{{ customer.total_spending }}</td>
+            <td>
+                <a href="{% url 'adminpanel:customer_view' customer.id %}">View</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No customer found.</td>
+        </tr>
+        {% endfor %}
     </tbody>
 </table>
-
-           
-

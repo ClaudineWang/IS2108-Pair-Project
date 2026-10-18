@@ -1,9 +1,10 @@
 from django.shortcuts import redirect, render
-from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet
-from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem
+from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet, ReviewForm
+from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription
 from django.db import models
 from django.db.models import Q, Count
 from django.db.models.functions import Coalesce
+from core.services import advance_subscription_delivery
 
 # Create your views here.
 def product_list(request):
@@ -176,7 +177,9 @@ def order_update(request, order_id):
     if request.method == 'POST':
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():
-            form.save()
+            updated_order = form.save()
+            if (order.delivery_status != "delivered" and updated_order.delivery_status == "delivered" and updated_order.subscription):
+                advance_subscription_delivery(updated_order.subscription)
             return redirect('adminpanel:order_list')
     else:
         form = OrderForm(instance=order)
@@ -233,7 +236,7 @@ def subscription_bundle_list(request):
     subscription_bundles = SubscriptionBundle.objects.all().order_by('id')
     search_query = request.GET.get("search", "")
     billing_frequency_filter = request.GET.get("billing_frequency", "")
-    is_active_filter = request.GET.get("is_active", "")
+    is_active_filter = request.GET.get("is_active", "").strip()
     
     if search_query:
         subscription_bundles = subscription_bundles.filter(
@@ -242,12 +245,12 @@ def subscription_bundle_list(request):
         
     if billing_frequency_filter:
        subscription_bundles = subscription_bundles.filter(
-            billing_frquency=billing_frequency_filter
+            billing_frequency=billing_frequency_filter
             )
-    if is_active_filter:
-        subscription_bundles = subscription_bundles.filter(
-            is_active =is_active_filter
-            )
+    if is_active_filter == 'true':
+        subscription_bundles = subscription_bundles.filter(is_active = True)
+    elif is_active_filter == 'false':
+        subscription_bundles = subscription_bundles.filter(is_active = False)
     context= {
         'subscription_bundles': subscription_bundles,
         'billing_frequencies': billing_frequencies,
@@ -332,3 +335,91 @@ def subscription_bundle_add(request):
         'submit_button_text': 'Add Bundle',
     }
     return render(request, 'adminpanel/subscription_bundle_form.html', context)
+
+def review_list(request):
+    reviews = Review.objects.all().order_by('rating')
+    search_query = request.GET.get("search", "").strip()
+    rating_filter = request.GET.get("rating", "")
+    date_filter = request.GET.get("created_at", "")
+    is_visible_filter = request.GET.get("is_visible", "")
+    if search_query:
+        search_filter = (
+            Q(customer__user__first_name__icontains=search_query) |
+            Q(customer__user__last_name__icontains=search_query) |
+            Q(customer__user__username__icontains=search_query) |
+            Q(product__name__icontains=search_query)
+        )
+        reviews = reviews.filter(search_filter)
+    if rating_filter:
+        reviews = reviews.filter(
+            rating=rating_filter
+        )
+    if date_filter:
+        reviews = reviews.filter(
+            created_at__date=date_filter
+        )
+    if is_visible_filter:
+        reviews = reviews.filter(
+            is_visible=is_visible_filter
+        )
+    context = {
+        'reviews': reviews,
+        'rating_choices': Review.RATING_CHOICES,
+        'search_query': search_query,
+        'rating_filter': rating_filter,
+        'date_filter': date_filter,
+        'is_visible_filter': is_visible_filter
+    }
+    return render(request, 'adminpanel/review_list.html', context)
+
+def review_update(request, review_id):
+    review = Review.objects.get(id=review_id)
+    if request.method == 'POST':
+        form = ReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            form.save()
+            return redirect('adminpanel:review_list')
+    else:
+        form = ReviewForm(instance=review)
+        
+    context = {
+        'form': form,
+        'review': review,
+        'page_title': f'Update Review {review.id}',
+        'submit_button_text': 'Update Status',
+    }
+    return render(request, 'adminpanel/review_form.html', context)
+
+def customer_subscription_list(request):
+
+    subscriptions = CustomerSubscription.objects.select_related('customer', 'bundle').order_by('-start_date')
+    search_query = request.GET.get("search", "")
+    status_filter = request.GET.get("status", "")
+    if search_query:
+        search_filter = (
+            Q(customer__user__first_name__icontains=search_query) |
+            Q(customer__user__last_name__icontains=search_query) |
+            Q(customer__user__username__icontains=search_query) |
+            Q(bundle__name__icontains=search_query)
+        )
+        subscriptions = subscriptions.filter(search_filter)
+    if status_filter:
+        subscriptions = subscriptions.filter(
+            status = status_filter
+        )
+    
+    context = {
+        'subscriptions': subscriptions,
+        'status_choices': CustomerSubscription.STATUS_CHOICES,
+        'search_query': search_query,
+        'status_filter': status_filter
+    }
+    return render(request, 'adminpanel/customer_subscription_list.html', context)
+
+def customer_subscription_view(request, subscription_id):
+    subscription = CustomerSubscription.objects.select_related('customer', 'bundle').get(id=subscription_id)
+    context = {
+        'subscription': subscription,
+        'page_title': f'Subscription Details for subscription id {subscription.id}'
+    }
+    return render(request, 'adminpanel/customer_subscription_view.html', context)

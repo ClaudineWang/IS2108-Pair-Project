@@ -5,7 +5,8 @@
         border-collapse: collapse;
     }
 
-    th, td {
+    th,
+    td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #ddd;
@@ -26,43 +27,30 @@
     }
 </style>
 <form method="get">
-    <input
-        type="text"
-        name="search"
-        placeholder="Search by product name"
-        value="{{ search_query }}"
-    >
+    <input type="text" name="search" placeholder="Search by product name" value="{{ search_query }}">
 
     <select name="category">
         <option value="">All categories</option>
 
         {% for category in categories %}
-            <option
-                value="{{ category.id }}"
-                {% if category_filter == category.id|stringformat:"s" %}
-                    selected
-                {% endif %}
-            >
-                {{ category.name }}
-            </option>
+        <option value="{{ category.id }}" {% if category_filter == category.id|stringformat:"s" %} selected {% endif %}>
+            {{ category.name }}
+        </option>
         {% endfor %}
     </select>
 
     <select name="stock_status">
         <option value="All Stock Status"> All Stocks </option>
 
-        <option value="Out of Stock"
-            {% if stock_status_filter == "Out of Stock" %}selected{% endif %}>
+        <option value="Out of Stock" {% if stock_status_filter == "Out of Stock" %}selected{% endif %}>
             Out of Stock
         </option>
 
-        <option value="Low in Stock"
-            {% if stock_status_filter == "Low in Stock" %}selected{% endif %}>
+        <option value="Low in Stock" {% if stock_status_filter == "Low in Stock" %}selected{% endif %}>
             Low in Stock
         </option>
 
-        <option value="In Stock"
-            {% if stock_status_filter == "In Stock" %}selected{% endif %}>
+        <option value="In Stock" {% if stock_status_filter == "In Stock" %}selected{% endif %}>
             In Stock
         </option>
     </select>
@@ -76,29 +64,32 @@
 
 <table>
     <thead>
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Current Stock</th>
-        <th>Stock Status</th>
-        <th>Actions</th>
-    </tr>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Current Stock</th>
+            <th>Stock Status</th>
+            <th>Actions</th>
+        </tr>
     </thead>
     <tbody>
 
-    {% for product in products %}
-    <tr>
-        <td>{{ product.id }}</td>
-        <td>{{ product.name }}</td>
-        <td>{{ product.category.name }}</td>
-        <td>{{ product.stock_level}}</td>
-        <td>{{ product.stock_status }}</td>
-        <td>
-            <a href="{% url 'adminpanel:inventory_update' product.id %}">View/ Edit</a>
-        </td>
-    </tr>
-    {% endfor %}
+        {% for product in products %}
+        <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.category.name }}</td>
+            <td>{{ product.stock_level}}</td>
+            <td>{{ product.stock_status }}</td>
+            <td>
+                <a href="{% url 'adminpanel:inventory_update' product.id %}">View/ Edit</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No inventory found.</td>
+        </tr>
+        {% endfor %}
     </tbody>
 </table>
-

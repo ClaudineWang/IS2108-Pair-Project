@@ -1,0 +1,68 @@
+<head>
+    <title> Admin Panel </title>
+</head>
+
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+</style>
+
+<body>
+    <h1> {{ page_title }}</h1>
+
+    <p>
+        Customer Name:
+        {{ subscription.customer.user.get_full_name }}
+    </p>
+    <p>
+        Customer Email:
+        {{ subscription.customer.user.email }}
+    </p>
+
+    <p>
+        Customer Phone Number:
+        {{ subscription.customer.phone_number }}
+    </p>
+
+    <p> Customer Delivery Address: 
+        {{ subscription.customer.delivery_address }}
+    </p>
+    <p> 
+        Bundle Name:
+        {{ subscription.bundle.name }}
+    </p>
+    <p>
+        Bundle Price:
+        ${{ subscription.bundle.price_per_delivery }}
+    </p>
+    <p>
+        Start Date:
+        {{ subscription.start_date|date:"d M Y" }}
+    </p>
+    <p>
+        Next Delivery Date:
+        {% if subscription.next_delivery_date %}
+            {{ subscription.next_delivery_date|date:"d M Y" }}
+        {% else %}
+            Not scheduled
+        {% endif %}
+    </p>
+    <p>
+        Status:
+        {{ subscription.get_status_display }}
+    </p>
+
+
+<a href="{% url 'adminpanel:customer_subscription_list' %}">Cancel</a>

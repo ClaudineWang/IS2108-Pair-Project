@@ -1,0 +1,75 @@
+<h1>Customer Subscription List</h1>
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+</style>
+<form method="get">
+    <input type="text" name="search" placeholder="Search by Bundle Name or Customer Name" value="{{ search_query }}">
+
+    <select name="status">
+        <option value="">All Subscription Statuses</option>
+
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+            {{ label }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Search</button>
+
+    <a href="{% url 'adminpanel:customer_subscription_list' %}">
+        Reset
+    </a>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Customer Name</th>
+            <th>Subscription Bundle Name</th>
+            <th>Start Date</th>
+            <th>Next Delivery Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        {% for subscription in subscriptions %}
+        <tr>
+            <td>{{ subscription.id }}</td>
+            <td>{{ subscription.customer.user.get_full_name }}</td>
+            <td>{{ subscription.bundle.name }}</td>
+            <td>{{ subscription.start_date|date:"d M Y" }}</td>
+            <td>{% if subscription.next_delivery_date %}
+                {{ subscription.next_delivery_date|date:"d M Y" }}
+                {% else %}
+                Not scheduled
+                {% endif %}</td>
+            <td>{{subscription.get_status_display}}</td>
+            <td>
+                <a href="{% url 'adminpanel:customer_subscription_view' subscription.id %}">View Details</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No subscriptions found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

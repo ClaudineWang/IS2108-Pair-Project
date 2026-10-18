@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
-from core.models import Product, Order, OrderItem, SubscriptionBundle, BundleItem
+from core.models import Product, Order, OrderItem, SubscriptionBundle, BundleItem, Review
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -36,3 +36,13 @@ BundleItemFormSet = inlineformset_factory(
     extra=1,
     can_delete=True
 )
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['is_visible']
+        labels = {
+            'is_visible': 'Visibility Status'
+        }
+        
+    
