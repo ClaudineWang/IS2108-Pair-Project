@@ -54,6 +54,43 @@ class Product(models.Model):
             return "In Stock"
     def __str__(self):
         return self.name
+class SubscriptionBundle(models.Model):
+    BILLING_FREQUENCY = [
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly')
+    ]
+    name = models.CharField(max_length=100)
+    description= models.TextField(blank=True)
+    price_per_delivery= models.DecimalField(max_digits=10, decimal_places=2)
+    billing_frequency = models.CharField(max_length=20, choices=BILLING_FREQUENCY, default='monthly')
+    is_active = models.BooleanField(default=False)
+    products = models.ManyToManyField(Product, through= 'BundleItem', related_name ='subscription_bundles')
+    
+    @property
+    def total_items(self):
+        return sum(
+            item.quantity
+            for item in self.bundle_items.all()
+        )
+    
+    def __str__(self):
+        return self.name
+    
+class CustomerSubscription(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('paused', 'Paused'),
+        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),
+    ]
+    customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='subscriptions')
+    bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name='customer_subscriptions')
+    start_date = models.DateTimeField(auto_now_add=True)
+    next_delivery_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+
+    def __str__(self):
+        return f"{self.customer.username} - {self.bundle.name} ({self.status})"
 
 class Order(models.Model):
     ORDER_TYPE = [
@@ -68,7 +105,7 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.PROTECT, related_name='orders')
-    subscription = models.ForeignKey('CustomerSubscription', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    subscription = models.ForeignKey(CustomerSubscription, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_address = models.TextField()
@@ -92,27 +129,7 @@ class OrderItem(models.Model):
     def __str__(self):
         return f" {self.product.name} in Order {self.order.id}"
 
-class SubscriptionBundle(models.Model):
-    BILLING_FREQUENCY = [
-        ('monthly', 'Monthly'),
-        ('yearly', 'Yearly')
-    ]
-    name = models.CharField(max_length=100)
-    description= models.TextField(blank=True)
-    price_per_delivery= models.DecimalField(max_digits=10, decimal_places=2)
-    billing_frequency = models.CharField(max_length=20, choices=BILLING_FREQUENCY, default='monthly')
-    is_active = models.BooleanField(default=False)
-    products = models.ManyToManyField(Product, through= 'BundleItem', related_name ='subscription_bundles')
-    
-    @property
-    def total_items(self):
-        return sum(
-            item.quantity
-            for item in self.bundle_items.all()
-        )
-    
-    def __str__(self):
-        return self.name
+
     
 class BundleItem(models.Model):
     subscription_bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name ='bundle_items')
@@ -160,32 +177,23 @@ class CartItem(models.Model):
         return f"{self.quantity} x {self.product.name} in Cart"
 
 
-class CustomerSubscription(models.Model):
-    STATUS_CHOICES = [
-        ('Active', 'Active'),
-        ('Paused', 'Paused'),
-        ('Cancelled', 'Cancelled'),
-    ]
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
-    bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name='customer_subscriptions')
-    start_date = models.DateTimeField(auto_now_add=True)
-    next_delivery_date = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
-
-    def __str__(self):
-        return f"{self.customer.username} - {self.bundle.name} ({self.status})"
 
 
 class Review(models.Model):
-    STATUS_CHOICES = [
-        ('Visible', 'Visible'),
-        ('Hidden', 'Hidden'),
+    
+    RATING_CHOICES = [
+        (1, "1 Star"),
+        (2, "2 Stars"),
+        (3, "3 Stars"),
+        (4, "4 Stars"),
+        (5, "5 Stars"),
     ]
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
-    rating = models.PositiveIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.PositiveIntegerField(choices=RATING_CHOICES)
     comment = models.TextField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Visible')
+    is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
