@@ -1,38 +1,37 @@
-<head>
-    <title> Admin Panel </title>
-</head>
+{% extends "adminpanel/base.html" %}
 
-<body>
-    <h1> {{ page_title }}</h1>
-    <p>
-        Product:
-        {{ product.name }}
-    </p>
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
-    <p>
-        Category:
-        {{ product.category.name }}
-    </p>
+{% block content %}
+<p>
+    <strong>Product:</strong>
+    {{ product.name }}
+</p>
 
-    <p>
-        Stock status:
-        {{ product.stock_status }}
-    </p>
+<p>
+    <strong>Category:</strong>
+    {{ product.category.name }}
+</p>
 
-    <p>
-        Visibility:
-        {% if product.is_visible %}
+<p>
+    <strong>Stock status:</strong>
+    {{ product.stock_status }}
+</p>
+
+<p>
+    <strong>Visibility:</strong>
+    {% if product.is_visible %}
         Visible
-        {% else %}
+    {% else %}
         Hidden
-        {% endif %}
-    </p>
+    {% endif %}
+</p>
 
-
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">{{ submit_button_text }}</button>
-        <a href="{% url 'adminpanel:inventory_list' %}">Cancel</a>
-    </form>
-</body>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">{{ submit_button_text }}</button>
+    <a href="{% url 'adminpanel:inventory_list' %}">Cancel</a>
+</form>
+{% endblock %}

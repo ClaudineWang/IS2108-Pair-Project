@@ -1,3 +1,9 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Subscription Bundles{% endblock %}
+{% block page_title %}Subscription Bundles{% endblock %}
+
+{% block content %}
 <h1>Subscription Bundles</h1>
 <style>
     table {
@@ -33,8 +39,8 @@
         <option value="">All Billing Frequencies</option>
 
         {% for frequency in billing_frequencies %}
-        <option value="{{ frequency.0 }}" {% if billing_frequency_filter==frequency.0 %}selected{% endif %}>
-            {{ frequency.0}}
+        <option value="{{ frequency.0 }}" {% if billing_frequency_filter == frequency.0 %}selected{% endif %}>
+            {{ frequency.0 }}
         </option>
         {% endfor %}
     </select>
@@ -42,11 +48,11 @@
     <select name="is_active">
         <option value="">All Statuses</option>
 
-        <option value="true" {% if is_active_filter=="true" %}selected{% endif %}>
+        <option value="true" {% if is_active_filter == "true" %}selected{% endif %}>
             Active
         </option>
 
-        <option value="false" {% if is_active_filter=="false" %}selected{% endif %}>
+        <option value="false" {% if is_active_filter == "false" %}selected{% endif %}>
             Inactive
         </option>
     </select>
@@ -84,15 +90,24 @@
                 {% endif %}
             </td>
             <td>
-                <a href="{% url 'adminpanel:subscription_bundle_update' subscription_bundle.id %}">View/ Edit</a>
+                <a href="{% url 'adminpanel:subscription_bundle_update' subscription_bundle.id %}">View / Edit</a>
             </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7">No subscriptions found.</td>
+            <td colspan="6">No subscriptions found.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
-<a href="{% url 'adminpanel:subscription_bundle_add' %}">Add New Subscription Bundle</a>
+<div style="margin-top: 20px;">
+    <a href="{% url 'adminpanel:subscription_bundle_add' %}">Add New Subscription Bundle</a>
+</div>
+
+<div style="margin-top: 12px;">
+    <a href="{% url 'adminpanel:customer_subscription_list' %}">
+        <button type="button">View Customer Subscription List</button>
+    </a>
+</div>
+{% endblock %}

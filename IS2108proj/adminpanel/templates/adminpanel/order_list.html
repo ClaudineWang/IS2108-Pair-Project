@@ -1,3 +1,9 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Order Management{% endblock %}
+{% block page_title %}Order Management{% endblock %}
+
+{% block content %}
 <h1>Order Managment</h1>
 <style>
     table {
@@ -67,12 +73,12 @@
         <tr>
             <td>{{ order.id }}</td>
             <td>{{ order.customer.user.get_full_name }}</td>
-            <td>{{ order.created_at | date:"d M Y" }}</td>
+            <td>{{ order.created_at|date:"d M Y" }}</td>
             <td>${{ order.grand_total|floatformat:2 }}</td>
             <td>{{ order.get_delivery_status_display }}</td>
             <td>{{ order.get_order_type_display }}</td>
             <td>
-                <a href="{% url 'adminpanel:order_update' order.id %}">View/ Edit</a>
+                <a href="{% url 'adminpanel:order_update' order.id %}">View / Edit</a>
             </td>
         </tr>
         {% empty %}
@@ -82,3 +88,4 @@
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}

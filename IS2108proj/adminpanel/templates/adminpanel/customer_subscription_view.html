@@ -1,3 +1,9 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
 <head>
     <title> Admin Panel </title>
 </head>
@@ -23,46 +29,54 @@
     <h1> {{ page_title }}</h1>
 
     <p>
-        Customer Name:
+        <strong>Customer Name:</strong>
         {{ subscription.customer.user.get_full_name }}
     </p>
+
     <p>
-        Customer Email:
+        <strong>Customer Email:</strong>
         {{ subscription.customer.user.email }}
     </p>
 
     <p>
-        Customer Phone Number:
+        <strong>Customer Phone Number:</strong>
         {{ subscription.customer.phone_number }}
     </p>
 
-    <p> Customer Delivery Address: 
+    <p>
+        <strong>Customer Delivery Address:</strong>
         {{ subscription.customer.delivery_address }}
     </p>
-    <p> 
-        Bundle Name:
+
+    <p>
+        <strong>Bundle Name:</strong>
         {{ subscription.bundle.name }}
     </p>
+
     <p>
-        Bundle Price:
+        <strong>Bundle Price:</strong>
         ${{ subscription.bundle.price_per_delivery }}
     </p>
+
     <p>
-        Start Date:
+        <strong>Start Date:</strong>
         {{ subscription.start_date|date:"d M Y" }}
     </p>
+
     <p>
-        Next Delivery Date:
+        <strong>Next Delivery Date:</strong>
         {% if subscription.next_delivery_date %}
             {{ subscription.next_delivery_date|date:"d M Y" }}
         {% else %}
             Not scheduled
         {% endif %}
     </p>
+
     <p>
-        Status:
+        <strong>Status:</strong>
         {{ subscription.get_status_display }}
     </p>
 
 
 <a href="{% url 'adminpanel:customer_subscription_list' %}">Cancel</a>
+{% endblock %}

@@ -1,3 +1,9 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Reviews Management{% endblock %}
+{% block page_title %}Reviews Management{% endblock %}
+
+{% block content %}
 <h1>Reviews Management</h1>
 <style>
     table {
@@ -78,7 +84,7 @@
             <td>{{ review.product.name }}</td>
             <td>{{ review.customer.user.get_full_name }}</td>
             <td>{{ review.rating }}</td>
-            <td title="{{review.comment}}">{{ review.comment | truncatewords:10 }}</td>
+            <td title="{{ review.comment }}">{{ review.comment|truncatewords:10 }}</td>
             <td>{% if review.is_visible %}
                 <span class="status-visible">Visible</span>
                 {% else %}
@@ -86,13 +92,14 @@
                 {% endif %}
             </td>
             <td>
-                <a href="{% url 'adminpanel:review_update' review.id %}">View/ Edit</a>
+                <a href="{% url 'adminpanel:review_update' review.id %}">View / Edit</a>
             </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7">No reviews found.</td>
+            <td colspan="6">No reviews found.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}

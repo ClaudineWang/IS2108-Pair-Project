@@ -1,3 +1,9 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Inventory Management{% endblock %}
+{% block page_title %}Inventory Management{% endblock %}
+
+{% block content %}
 <h1>Inventory Management</h1>
 <style>
     table {
@@ -40,7 +46,7 @@
     </select>
 
     <select name="stock_status">
-        <option value="All Stock Status"> All Stocks </option>
+        <option value="">All Stocks</option>
 
         <option value="Out of Stock" {% if stock_status_filter == "Out of Stock" %}selected{% endif %}>
             Out of Stock
@@ -80,16 +86,17 @@
             <td>{{ product.id }}</td>
             <td>{{ product.name }}</td>
             <td>{{ product.category.name }}</td>
-            <td>{{ product.stock_level}}</td>
+            <td>{{ product.stock_level }}</td>
             <td>{{ product.stock_status }}</td>
             <td>
-                <a href="{% url 'adminpanel:inventory_update' product.id %}">View/ Edit</a>
+                <a href="{% url 'adminpanel:inventory_update' product.id %}">View / Edit</a>
             </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7">No inventory found.</td>
+            <td colspan="6">No inventory found.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}

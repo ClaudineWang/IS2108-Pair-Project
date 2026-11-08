@@ -1,3 +1,9 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Customer Subscription List{% endblock %}
+{% block page_title %}Customer Subscription List{% endblock %}
+
+{% block content %}
 <h1>Customer Subscription List</h1>
 <style>
     table {
@@ -61,7 +67,7 @@
                 {% else %}
                 Not scheduled
                 {% endif %}</td>
-            <td>{{subscription.get_status_display}}</td>
+            <td>{{ subscription.get_status_display }}</td>
             <td>
                 <a href="{% url 'adminpanel:customer_subscription_view' subscription.id %}">View Details</a>
             </td>
@@ -73,3 +79,4 @@
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}
