@@ -48,6 +48,7 @@
         </option>
     </select>
 
+
     <button type="submit">Search</button>
 
     <a href="{% url 'adminpanel:order_list' %}">
@@ -74,7 +75,7 @@
             <td>{{ order.id }}</td>
             <td>{{ order.customer.user.get_full_name }}</td>
             <td>{{ order.created_at|date:"d M Y" }}</td>
-            <td>${{ order.grand_total|floatformat:2 }}</td>
+            <td>{{ currency }} {{ order.display_grand_total|floatformat:2 }}</td>
             <td>{{ order.get_delivery_status_display }}</td>
             <td>{{ order.get_order_type_display }}</td>
             <td>

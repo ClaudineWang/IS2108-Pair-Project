@@ -65,17 +65,17 @@ class SubscriptionBundle(models.Model):
     billing_frequency = models.CharField(max_length=20, choices=BILLING_FREQUENCY, default='monthly')
     is_active = models.BooleanField(default=False)
     products = models.ManyToManyField(Product, through= 'BundleItem', related_name ='subscription_bundles')
-    
+
     @property
     def total_items(self):
         return sum(
             item.quantity
             for item in self.bundle_items.all()
         )
-    
+
     def __str__(self):
         return self.name
-    
+
 class CustomerSubscription(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
@@ -130,7 +130,7 @@ class OrderItem(models.Model):
         return f" {self.product.name} in Order {self.order.id}"
 
 
-    
+
 class BundleItem(models.Model):
     subscription_bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name ='bundle_items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name ='bundle_items')
@@ -184,7 +184,7 @@ class CartItem(models.Model):
 
 
 class Review(models.Model):
-    
+
     RATING_CHOICES = [
         (1, "1 Star"),
         (2, "2 Stars"),

@@ -1,12 +1,16 @@
+from decimal import Decimal
 from django.shortcuts import redirect, render
-from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet, ReviewForm
+from django.contrib.auth import login
+from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet, ReviewForm, AdminLoginForm
 from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription
 from django.db import models
 from django.db.models import Q, Count
 from django.db.models.functions import Coalesce
 from core.services import advance_subscription_delivery
+from core.currency import RATES as CURRENCY_RATES, get_selected_currency
 
-# Create your views here.
+
+
 def product_list(request):
     products = Product.objects.all().order_by('id')
     categories = Category.objects.all().order_by('name')
@@ -14,65 +18,114 @@ def product_list(request):
     category_filter = request.GET.get("category", "")
     caffeine_filter = request.GET.get("caffeine_type", "")
     roast_filter = request.GET.get("roast_level", "")
+    selected_currency = get_selected_currency(request)
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
     if search_query:
-        products = products.filter(
-            name__icontains = search_query
-        )
+        products = products.filter(name__icontains=search_query)
+
     if category_filter:
-        products = products.filter(
-            category_id = category_filter
-        )
+        products = products.filter(category_id=category_filter)
+
     if caffeine_filter:
-        products = products.filter(
-            caffeine_type = caffeine_filter
-        )
+        products = products.filter(caffeine_type=caffeine_filter)
+
     if roast_filter:
-        products = products.filter(
-            roast_level = roast_filter
-        )
-    context= {
+        products = products.filter(roast_level=roast_filter)
+
+    for product in products:
+        product.display_price = product.price * CURRENCY_RATES[selected_currency]
+
+    context = {
         'products': products,
         'categories': categories,
         'search_query': search_query,
         'roast_filter': roast_filter,
         'caffeine_filter': caffeine_filter,
-        'category_filter': category_filter
+        'category_filter': category_filter,
+        'currency': selected_currency,
+        'selected_currency': selected_currency,
     }
 
     return render(request, 'adminpanel/product_list.html', context)
 
+
+
 def product_add(request):
-    if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
+    selected_currency = get_selected_currency(request)
+
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
+    request.session["currency"] = selected_currency
+
+    if request.method == "POST":
+        form = ProductForm(
+            request.POST,
+            request.FILES,
+            currency=selected_currency
+        )
+
         if form.is_valid():
             form.save()
-            return redirect('adminpanel:product_list')
+
+            return redirect(
+                "adminpanel:product_list"
+            )
     else:
-        form = ProductForm()
+        form = ProductForm(
+            currency=selected_currency
+        )
 
     context = {
-        'form': form,
-        'page_title': 'Add New Product',
-        'submit_button_text': 'Add Product',
+        "form": form,
+        "page_title": "Add New Product",
+        "submit_button_text": "Add Product",
+        "selected_currency": selected_currency,
     }
-    return render(request, 'adminpanel/product_form.html', context)
 
+    return render(
+        request,
+        "adminpanel/product_form.html",
+        context
+    )
 def product_update(request, product_id):
     product = Product.objects.get(id=product_id)
-    if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES, instance=product)
+
+    selected_currency = get_selected_currency(request)
+
+
+
+    if request.method == "POST":
+
+
+        form = ProductForm(
+            request.POST,
+            instance=product,
+            currency=selected_currency
+        )
+
         if form.is_valid():
             form.save()
-            return redirect('adminpanel:product_list')
-    else:
-        form = ProductForm(instance=product)
 
-    context = {
-        'form': form,
-        'page_title': 'Update Product',
-        'submit_button_text': 'Update Product',
-    }
-    return render(request, 'adminpanel/product_form.html', context)
+            return redirect(
+                "adminpanel:product_list"
+            )
+    else:
+        form = ProductForm(
+            instance=product,
+            currency=selected_currency
+        )
+
+    return render(request, "adminpanel/product_form.html", {
+        "form": form,
+        "product": product,
+        "page_title": "Update Product",
+        "submit_button_text": "Update Product",
+        "selected_currency": selected_currency,
+
+    })
 
 def inventory_list(request):
     products = Product.objects.all().order_by('id')
@@ -80,6 +133,10 @@ def inventory_list(request):
     search_query = request.GET.get("search", "")
     category_filter = request.GET.get("category", "")
     stock_status_filter = request.GET.get("stock_status", "")
+    selected_currency = get_selected_currency(request)
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
     if search_query:
         products = products.filter(
             name__icontains = search_query
@@ -104,18 +161,21 @@ def inventory_list(request):
             stock_level__gt=models.F("reorder_threshold")
         )
 
+
     context= {
             'products': products,
             'categories': categories,
             'search_query': search_query,
             'stock_status_filter': stock_status_filter,
-            'category_filter': category_filter
+            'category_filter': category_filter,
+
     }
 
     return render(request, 'adminpanel/inventory_list.html', context)
 
 def inventory_update(request, product_id):
     product = Product.objects.get(id=product_id)
+
     if request.method == 'POST':
         form = InventoryForm(request.POST, instance=product)
         if form.is_valid():
@@ -139,6 +199,10 @@ def order_list(request):
     date_filter = request.GET.get("created_at", "")
     order_type_filter = request.GET.get("order_type", "")
     delivery_status_filter = request.GET.get("delivery_status", "")
+    selected_currency = get_selected_currency(request)
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency= "SGD"
+
     if search_query:
         search_filter = (
             Q(customer__user__first_name__icontains=search_query) |
@@ -160,45 +224,87 @@ def order_list(request):
         orders = orders.filter(
             delivery_status=delivery_status_filter
         )
+    for order in orders:
+        order.display_grand_total = order.grand_total * CURRENCY_RATES[selected_currency]
 
     context = {
-            'orders': orders,
-            'delivery_statuses': delivery_statuses,
-            'search_query': search_query,
-            'date_filter': date_filter,
-            'order_type_filter': order_type_filter,
-            'delivery_status_filter': delivery_status_filter
-
-        }
+        'orders': orders,
+        'delivery_statuses': delivery_statuses,
+        'search_query': search_query,
+        'date_filter': date_filter,
+        'order_type_filter': order_type_filter,
+        'delivery_status_filter': delivery_status_filter,
+        'currency': selected_currency,
+        'selected_currency': selected_currency,
+    }
     return render(request, 'adminpanel/order_list.html', context)
 
 def order_update(request, order_id):
-    order = Order.objects.get(id=order_id)
-    if request.method == 'POST':
+    order = Order.objects.prefetch_related("items__product").get(id=order_id)
+
+    selected_currency = get_selected_currency(request)
+
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
+    request.session["currency"] = selected_currency
+
+    if request.method == "POST":
+        selected_currency = request.POST.get(
+            "currency",
+            request.session.get("currency", "SGD")
+        )
         form = OrderForm(request.POST, instance=order)
+
         if form.is_valid():
             updated_order = form.save()
-            if (order.delivery_status != "delivered" and updated_order.delivery_status == "delivered" and updated_order.subscription):
+            if (
+                order.delivery_status != "delivered"
+                and updated_order.delivery_status == "delivered"
+                and updated_order.subscription
+            ):
                 advance_subscription_delivery(updated_order.subscription)
-            return redirect('adminpanel:order_list')
+            return redirect("adminpanel:order_list")
     else:
         form = OrderForm(instance=order)
 
+    for item in order.items.all():
+        item.display_price_at_purchase = item.price_at_purchase * CURRENCY_RATES[selected_currency]
+        item.display_subtotal = item.subtotal * CURRENCY_RATES[selected_currency]
+
+    order.display_total_amount = order.total_amount * CURRENCY_RATES[selected_currency]
+    order.display_delivery_fee = order.delivery_fee * CURRENCY_RATES[selected_currency]
+    order.display_grand_total = order.grand_total * CURRENCY_RATES[selected_currency]
+
     context = {
-        'form': form,
-        'order': order,
-        'page_title': f'Update Order {order.id}',
-        'submit_button_text': 'Update Order',
+        "form": form,
+        "order": order,
+        "page_title": f"Update Order {order.id}",
+        "submit_button_text": "Update Order",
+        "selected_currency": selected_currency,
     }
-    return render(request, 'adminpanel/order_form.html', context)
+    return render(request, "adminpanel/order_form.html", context)
 
 def customer_list(request):
-    customers = CustomerProfile.objects.annotate(
-        total_order =Count('orders', distinct=True),
-        total_spending = Coalesce(models.Sum('orders__grand_total'), 0, output_field=models.DecimalField(max_digits=10, decimal_places=2))
+    selected_currency = get_selected_currency(request)
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
 
-    ).select_related('user').order_by('id')
-    search_query = request.GET.get("search", "")
+    customers = (
+        CustomerProfile.objects
+        .select_related("user")
+        .annotate(
+            total_order=Count("orders", distinct=True),
+            total_spending=Coalesce(
+                models.Sum("orders__grand_total"),
+                Decimal("0"),
+                output_field=models.DecimalField(max_digits=12, decimal_places=2),
+            ),
+        )
+        .order_by("id")
+    )
+
+    search_query = request.GET.get("search", "").strip()
     if search_query:
         search_filter = (
             Q(user__first_name__icontains=search_query) |
@@ -210,28 +316,54 @@ def customer_list(request):
             search_filter |= Q(id=int(search_query))
         customers = customers.filter(search_filter)
 
+    for customer in customers:
+        customer.display_total_spending = (
+            customer.total_spending or Decimal("0")
+        ) * CURRENCY_RATES[selected_currency]
+
     context = {
-        'customers': customers,
-        'search_query': search_query,
+        "customers": customers,
+        "search_query": search_query,
+        "selected_currency": selected_currency,
+        "page_title": "Customer List",
+        "currency": selected_currency,
     }
-    return render(request, 'adminpanel/customer_list.html', context)
+    return render(request, "adminpanel/customer_list.html", context)
 
 def customer_view (request, customer_id):
+    selected_currency = get_selected_currency(request)
+
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
+    request.session["currency"] = selected_currency
+
     customer = CustomerProfile.objects.annotate(
         total_order=Count('orders', distinct=True),
         total_spending=Coalesce(models.Sum('orders__grand_total'), 0, output_field=models.DecimalField(max_digits=10, decimal_places=2))
     ).select_related('user').get(id=customer_id)
 
-    customer_recent_orders = customer.orders.select_related("customer").prefetch_related("items__product").order_by("-created_at") [:5]
+    customer_recent_orders = customer.orders.select_related("customer").prefetch_related("items__product").order_by("-created_at")[:5]
+
+    for order in customer_recent_orders:
+        order.display_grand_total = order.grand_total * CURRENCY_RATES[selected_currency]
+
+    customer.display_total_spending = customer.total_spending * CURRENCY_RATES[selected_currency]
 
     context = {
         'customer': customer,
         'page_title': 'Customer Details',
-        'customer_recent_orders': customer_recent_orders
+        'customer_recent_orders': customer_recent_orders,
+        'selected_currency': selected_currency,
+        'currency': selected_currency,
     }
     return render(request, 'adminpanel/customer_view.html', context)
 
 def subscription_bundle_list(request):
+    selected_currency = get_selected_currency(request)
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
     billing_frequencies = SubscriptionBundle.BILLING_FREQUENCY
     subscription_bundles = SubscriptionBundle.objects.all().order_by('id')
     search_query = request.GET.get("search", "")
@@ -251,24 +383,34 @@ def subscription_bundle_list(request):
         subscription_bundles = subscription_bundles.filter(is_active = True)
     elif is_active_filter == 'false':
         subscription_bundles = subscription_bundles.filter(is_active = False)
+    for bundle in subscription_bundles:
+        bundle.display_price = bundle.price_per_delivery * CURRENCY_RATES[selected_currency]
     context= {
         'subscription_bundles': subscription_bundles,
         'billing_frequencies': billing_frequencies,
         'search_query': search_query,
         'billing_frequency_filter': billing_frequency_filter,
-        'is_active_filter': is_active_filter
+        'is_active_filter': is_active_filter,
+        'selected_currency': selected_currency,
+        'currency': selected_currency,
     }
     return render(request, 'adminpanel/subscription_bundle_list.html', context)
 
 def subscription_bundle_update(request, subscription_bundle_id):
+    selected_currency = get_selected_currency(request)
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
+    request.session["currency"] = selected_currency
     subscription_bundle = SubscriptionBundle.objects.get(id=subscription_bundle_id)
 
     if request.method == "POST":
+
         subscription_bundle_form = SubscriptionBundleForm(
             request.POST,
-            instance=subscription_bundle
+            instance=subscription_bundle,
+            currency=selected_currency
         )
-
         bundle_item_formset = BundleItemFormSet(
             request.POST,
             instance=subscription_bundle,
@@ -281,27 +423,49 @@ def subscription_bundle_update(request, subscription_bundle_id):
         ):
             subscription_bundle_form.save()
             bundle_item_formset.save()
-            return redirect("adminpanel:subscription_bundle_list")
 
+            return redirect(
+                "adminpanel:subscription_bundle_list"
+            )
     else:
-        subscription_bundle_form = SubscriptionBundleForm(instance=subscription_bundle)
+        subscription_bundle_form = SubscriptionBundleForm(
+            instance=subscription_bundle,
+            currency=selected_currency
+        )
         bundle_item_formset = BundleItemFormSet(
             instance=subscription_bundle,
             bundle=subscription_bundle
         )
 
     context = {
-        'subscription_bundle_form': subscription_bundle_form,
-        'bundle_item_formset': bundle_item_formset,
-        'page_title': 'Update Subscription Bundle',
-        'submit_button_text': 'Update Bundle',
+        "subscription_bundle_form": subscription_bundle_form,
+        "bundle_item_formset": bundle_item_formset,
+        "page_title": "Update Subscription Bundle",
+        "submit_button_text": "Update Bundle",
+        "selected_currency": selected_currency,
+        'currency': selected_currency,
     }
-    return render(request, 'adminpanel/subscription_bundle_form.html', context)
+    return render(request, "adminpanel/subscription_bundle_form.html", context)
+
 
 def subscription_bundle_add(request):
+    selected_currency = get_selected_currency(request)
+
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
+    request.session["currency"] = selected_currency
+
     if request.method == "POST":
-        subscription_bundle_form = SubscriptionBundleForm(request.POST)
-        bundle_item_formset = BundleItemFormSet(request.POST)
+
+
+        subscription_bundle_form = SubscriptionBundleForm(
+            request.POST,
+            currency=selected_currency
+        )
+        bundle_item_formset = BundleItemFormSet(
+            request.POST
+        )
 
         if (
             subscription_bundle_form.is_valid()
@@ -312,16 +476,19 @@ def subscription_bundle_add(request):
             bundle_item_formset.save()
             return redirect("adminpanel:subscription_bundle_list")
     else:
-        subscription_bundle_form = SubscriptionBundleForm()
+        subscription_bundle_form = SubscriptionBundleForm(
+            currency=selected_currency
+        )
         bundle_item_formset = BundleItemFormSet()
 
     context = {
-        'subscription_bundle_form': subscription_bundle_form,
-        'bundle_item_formset': bundle_item_formset,
-        'page_title': 'Add New Subscription Bundle',
-        'submit_button_text': 'Add Bundle',
+        "subscription_bundle_form": subscription_bundle_form,
+        "bundle_item_formset": bundle_item_formset,
+        "page_title": "Add New Subscription Bundle",
+        "submit_button_text": "Add Bundle",
+        "selected_currency": selected_currency,
     }
-    return render(request, 'adminpanel/subscription_bundle_form.html', context)
+    return render(request, "adminpanel/subscription_bundle_form.html", context)
 
 def review_list(request):
     reviews = Review.objects.all().order_by('rating')
@@ -378,6 +545,7 @@ def review_update(request, review_id):
     return render(request, 'adminpanel/review_form.html', context)
 
 def customer_subscription_list(request):
+    selected_currency = get_selected_currency(request)
 
     subscriptions = CustomerSubscription.objects.select_related('customer', 'bundle').order_by('-start_date')
     search_query = request.GET.get("search", "")
@@ -399,14 +567,51 @@ def customer_subscription_list(request):
         'subscriptions': subscriptions,
         'status_choices': CustomerSubscription.STATUS_CHOICES,
         'search_query': search_query,
-        'status_filter': status_filter
+        'status_filter': status_filter,
+        'selected_currency': selected_currency,
+        'currency': selected_currency,
     }
     return render(request, 'adminpanel/customer_subscription_list.html', context)
 
 def customer_subscription_view(request, subscription_id):
-    subscription = CustomerSubscription.objects.select_related('customer', 'bundle').get(id=subscription_id)
+    selected_currency = get_selected_currency(request)
+
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
+
+
+    subscription = (
+        CustomerSubscription.objects
+        .select_related("customer__user", "bundle")
+        .get(id=subscription_id)
+    )
+
+
+    subscription.bundle.display_price = (
+        subscription.bundle.price_per_delivery * CURRENCY_RATES[selected_currency]
+    ).quantize(Decimal("0.01"))
+
     context = {
-        'subscription': subscription,
-        'page_title': f'Subscription Details for subscription id {subscription.id}'
+        "subscription": subscription,
+        "page_title": "Customer Subscription Details",
+        "selected_currency": selected_currency,
+        "currency": selected_currency,
     }
-    return render(request, 'adminpanel/customer_subscription_view.html', context)
+    return render(request, "adminpanel/customer_subscription_view.html", context)
+
+def admin_login(request):
+    if request.method == "POST":
+        form = AdminLoginForm(request.POST)
+
+        if form.is_valid():
+            user = form.cleaned_data["user"]
+            login(request, user)
+            return redirect("adminpanel:product_list")
+    else:
+        form = AdminLoginForm()
+
+    return render(request, "adminpanel/admin_login.html", {
+        "form": form,
+        "page_title": "Admin Login",
+    })

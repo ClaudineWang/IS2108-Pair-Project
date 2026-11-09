@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +23,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 20px;
             padding: 16px 0;
             border-bottom: 1px solid #ddd;
             margin-bottom: 24px;
@@ -51,7 +53,9 @@
             margin-bottom: 20px;
         }
 
-        input, select, button {
+        input,
+        select,
+        button {
             padding: 8px 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
@@ -72,7 +76,8 @@
             margin-top: 12px;
         }
 
-        th, td {
+        th,
+        td {
             padding: 10px 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
@@ -104,9 +109,21 @@
         a:hover {
             text-decoration: underline;
         }
+
+        .currency-form {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin: 0;
+        }
+
+        .currency-form label {
+            font-weight: 600;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
+
 <body>
     <div class="container">
         <header class="topbar">
@@ -119,11 +136,159 @@
                 <a href="{% url 'adminpanel:subscription_bundle_list' %}">Subscriptions</a>
                 <a href="{% url 'adminpanel:review_list' %}">Reviews</a>
             </nav>
+
+            <form method="get" class="currency-form">
+                <label for="currency">Currency:</label>
+                <select name="currency" id="currency">
+                    <option value="SGD" {% if selected_currency == "SGD" %}selected{% endif %}>SGD</option>
+                    <option value="USD" {% if selected_currency == "USD" %}selected{% endif %}>USD</option>
+                    <option value="EUR" {% if selected_currency == "EUR" %}selected{% endif %}>EUR</option>
+                </select>
+            </form>
         </header>
 
         <main>
             {% block content %}{% endblock %}
         </main>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const currencySelect = document.getElementById("currency");
+            if (!currencySelect) return;
+
+            const formKey = "admin_form_draft";
+            const rates = { SGD: 1, USD: 0.74, EUR: 0.68 };
+
+            function convertAmount(value, fromCurrency, toCurrency) {
+                const numeric = Number(value);
+                if (!Number.isFinite(numeric)) return value;
+
+                const fromRate = rates[fromCurrency] || 1;
+                const toRate = rates[toCurrency] || 1;
+
+                const sgdValue = numeric / fromRate;
+                return (sgdValue * toRate).toFixed(2);
+            }
+
+            function buildDraftFromForm(form) {
+                const draft = {};
+
+                Array.from(form.elements).forEach(function (field) {
+                    if (!field.name || field.disabled) return;
+                    if (field.type === "submit" || field.type === "button") return;
+                    if (field.type === "file") return;
+                    if (field.name === "currency") return;
+
+                    if (field.type === "checkbox" || field.type === "radio") {
+                        if (!field.checked) return;
+                        if (Object.prototype.hasOwnProperty.call(draft, field.name)) {
+                            if (!Array.isArray(draft[field.name])) {
+                                draft[field.name] = [draft[field.name]];
+                            }
+                            draft[field.name].push(field.value);
+                        } else {
+                            draft[field.name] = field.value;
+                        }
+                        return;
+                    }
+
+                    if (field.name === "price" || field.name === "price_per_delivery") {
+                        const current = field.value;
+                        if (current !== "") {
+                            draft[field.name] = current;
+                        }
+                        return;
+                    }
+
+                    if (field.value !== "") {
+                        if (Object.prototype.hasOwnProperty.call(draft, field.name)) {
+                            if (!Array.isArray(draft[field.name])) {
+                                draft[field.name] = [draft[field.name]];
+                            }
+                            draft[field.name].push(field.value);
+                        } else {
+                            draft[field.name] = field.value;
+                        }
+                    }
+                });
+
+                return draft;
+            }
+
+            function restoreDraftToForm(form, draft) {
+                if (!draft) return;
+
+                Object.entries(draft).forEach(function ([name, value]) {
+                    const matches = Array.from(form.querySelectorAll(`[name="${name}"]`));
+
+                    if (!matches.length) return;
+
+                    const values = Array.isArray(value) ? value : [value];
+
+                    matches.forEach(function (field, index) {
+                        const savedValue = values[index] ?? values[0];
+
+                        if (field.type === "checkbox") {
+                            field.checked = String(field.value) === String(savedValue);
+                        } else if (field.type === "radio") {
+                            field.checked = String(field.value) === String(savedValue);
+                        } else if (field.type !== "file") {
+                            field.value = savedValue;
+                        }
+                    });
+                });
+            }
+
+            const savedDraft = sessionStorage.getItem(formKey);
+            const mainForm = document.querySelector("main form");
+            if (savedDraft && mainForm) {
+                try {
+                    restoreDraftToForm(mainForm, JSON.parse(savedDraft));
+                } catch (e) {
+                    console.warn("Failed to restore draft form:", e);
+                }
+            }
+
+            currencySelect.addEventListener("change", function () {
+                const currentParams = new URLSearchParams(window.location.search);
+                const formCurrency = document.getElementById("form-currency");
+                const oldCurrency =
+                    currentParams.get("currency") ||
+                    (formCurrency && formCurrency.value) ||
+                    "SGD";
+                const newCurrency = this.value;
+
+                if (typeof window.saveDraftBeforeCurrencyChange === "function") {
+                    window.saveDraftBeforeCurrencyChange(oldCurrency, newCurrency);
+                }
+
+                const mainForm = document.querySelector("main form");
+                if (mainForm) {
+                    const draft = buildDraftFromForm(mainForm);
+
+                    Object.entries(draft).forEach(function ([name, value]) {
+                        if (name === "price" || name === "price_per_delivery") {
+                            const converted = convertAmount(value, oldCurrency, newCurrency);
+                            draft[name] = converted;
+                        }
+                    });
+
+                    sessionStorage.setItem(formKey, JSON.stringify(draft));
+                }
+
+                currentParams.set("currency", newCurrency);
+                window.location.search = currentParams.toString();
+            });
+
+            const forms = document.querySelectorAll("form");
+            forms.forEach(function (form) {
+                form.addEventListener("submit", function () {
+                    sessionStorage.removeItem(formKey);
+                });
+            });
+        });
+    </script>
+
 </body>
 </html>

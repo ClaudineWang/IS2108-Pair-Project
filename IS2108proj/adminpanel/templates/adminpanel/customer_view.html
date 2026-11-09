@@ -40,7 +40,7 @@
 
 <p>
     <strong>Total Spending:</strong>
-    ${{ customer.total_spending }}
+    {{ selected_currency }} {{ customer.display_total_spending|floatformat:2 }}
 </p>
 
 <h3>Recent Orders:</h3>
@@ -61,7 +61,7 @@
             <td>{{ order.id }}</td>
             <td>{{ order.created_at|date:"F j, Y" }}</td>
             <td>{{ order.get_order_type_display }}</td>
-            <td>${{ order.grand_total }}</td>
+            <td>{{ selected_currency }} {{ order.display_grand_total|floatformat:2 }}</td>
             <td>{{ order.get_delivery_status_display }}</td>
         </tr>
         {% empty %}

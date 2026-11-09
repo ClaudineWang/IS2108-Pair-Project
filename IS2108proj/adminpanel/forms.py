@@ -1,12 +1,48 @@
+from decimal import Decimal
 from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
-from django.db.models import Q
-from core.models import Product, Order, OrderItem, SubscriptionBundle, BundleItem, Review
+from core.models import Product, SubscriptionBundle, BundleItem, Order, Review
+from core.currency import RATES as CURRENCY_RATES, normalize_currency
+
+
 
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        self.currency = normalize_currency(kwargs.pop("currency", "SGD"))
+
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            original_sgd_price = self.instance.price
+
+            converted_price = (
+                original_sgd_price
+                * CURRENCY_RATES[self.currency]
+            )
+
+            self.initial["price"] = f"{converted_price:.2f}"
+
+    def clean_price(self):
+        price = self.cleaned_data.get("price")
+
+        if price is None:
+            return price
+
+        price = Decimal(str(price))
+
+        # Already in SGD
+        if self.currency == "SGD":
+            return price.quantize(Decimal("0.01"))
+
+        # Convert entered USD/EUR value back into SGD
+        sgd_price = price / CURRENCY_RATES[self.currency]
+
+        return sgd_price.quantize(Decimal("0.01"))
+
 
 class InventoryForm(forms.ModelForm):
     class Meta:
@@ -16,18 +52,53 @@ class InventoryForm(forms.ModelForm):
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ["delivery_status", "delivery_address"]
+        fields = ["delivery_status"]
 
 class SubscriptionBundleForm(forms.ModelForm):
     class Meta:
         model = SubscriptionBundle
-        fields = ["name", "description", "price_per_delivery", "billing_frequency", "is_active"]
+        fields = [
+            "name",
+            "billing_frequency",
+            "price_per_delivery",
+            "is_active",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        self.currency = normalize_currency(kwargs.pop("currency", "SGD"))
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            converted = self.instance.price_per_delivery * CURRENCY_RATES[self.currency]
+            self.initial["price_per_delivery"] = f"{converted:.2f}"
+
+    def clean_price_per_delivery(self):
+        price = self.cleaned_data.get("price_per_delivery")
+        if price is None:
+            return price
+
+        price = Decimal(str(price))
+
+        if self.currency == "SGD":
+            return price.quantize(Decimal("0.01"))
+
+        return (price / CURRENCY_RATES[self.currency]).quantize(Decimal("0.01"))
+
+    def save(self, commit=True):
+        bundle = super().save(commit=False)
+        bundle.price_per_delivery = self.cleaned_data["price_per_delivery"]
+
+        if commit:
+            bundle.save()
+
+        return bundle
 
 class BundleItemForm(forms.ModelForm):
     class Meta:
         model = BundleItem
         fields = ["product", "quantity"]
         widgets = {
+
             "quantity": forms.NumberInput(attrs={"min": 1}),
         }
 
@@ -65,12 +136,39 @@ BundleItemFormSet = inlineformset_factory(
     BundleItem,
     form=BundleItemForm,
     formset=BaseBundleItemFormSet,
-    extra=1,
+    extra =0,
     can_delete=True
 )
+
 
 class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
         fields = ["is_visible"]
 
+class AdminLoginForm(forms.Form):
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={"placeholder": "Username"})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "Password"})
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        username = cleaned_data.get("username")
+        password = cleaned_data.get("password")
+
+        if username and password:
+            user = authenticate(username=username, password=password)
+
+            if user is None:
+                raise forms.ValidationError("Invalid username or password.")
+            if not user.is_active:
+                raise forms.ValidationError("This account is inactive.")
+            if not user.is_staff:
+                raise forms.ValidationError("This account is not an admin account.")
+
+            cleaned_data["user"] = user
+
+        return cleaned_data
