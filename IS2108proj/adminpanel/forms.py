@@ -3,7 +3,7 @@ from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
 from core.models import Product, SubscriptionBundle, BundleItem, Order, Review
 from core.currency import RATES as CURRENCY_RATES, normalize_currency
-
+from django.contrib.auth import authenticate
 
 
 class ProductForm(forms.ModelForm):

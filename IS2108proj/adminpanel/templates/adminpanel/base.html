@@ -120,6 +120,24 @@
         .currency-form label {
             font-weight: 600;
         }
+
+        .logout-form {
+            display: inline;
+            margin: 0;
+        }
+
+        .logout-button {
+            background: transparent;
+            color: #1d4ed8;
+            border: none;
+            padding: 0;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .logout-button:hover {
+            text-decoration: underline;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -135,6 +153,14 @@
                 <a href="{% url 'adminpanel:customer_list' %}">Customers</a>
                 <a href="{% url 'adminpanel:subscription_bundle_list' %}">Subscriptions</a>
                 <a href="{% url 'adminpanel:review_list' %}">Reviews</a>
+                {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'adminpanel:admin_logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">
+                        Sign out
+                    </button>
+                </form>
+                {% endif %}
             </nav>
 
             <form method="get" class="currency-form">
@@ -291,4 +317,5 @@
     </script>
 
 </body>
+
 </html>
