@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .checkout-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; }
+        .panel { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        .summary-list { list-style: none; padding: 0; }
+        .summary-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .total { font-weight: bold; font-size: 1.1rem; }
+        label { display: block; margin-top: 12px; margin-bottom: 6px; }
+        input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+        textarea { min-height: 80px; }
+        button { margin-top: 16px; padding: 10px 14px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Checkout</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <div class="checkout-layout">
+        <div class="panel">
+            <h2>Delivery details</h2>
+            <form method="post">
+                {% csrf_token %}
+
+                <label for="order_type">Order type</label>
+                <select name="order_type" id="order_type">
+                    <option value="one-time">One-Time</option>
+                    <option value="subscription">Subscription</option>
+                </select>
+
+                <label for="delivery_address">Delivery address</label>
+                <textarea name="delivery_address" id="delivery_address" placeholder="Enter your delivery address">{{ customer_profile.delivery_address }}</textarea>
+
+                <button type="submit">Place order</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h2>Order summary</h2>
+            <ul class="summary-list">
+                {% for item in cart_items %}
+                    <li>
+                        <span>{{ item.product.name }} x {{ item.quantity }}</span>
+                        <span>${{ item.subtotal }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <ul class="summary-list">
+                <li><span>Subtotal</span><span>${{ subtotal }}</span></li>
+                <li><span>Delivery fee</span><span>${{ delivery_fee }}</span></li>
+                <li class="total"><span>Total</span><span>${{ total }}</span></li>
+            </ul>
+
+            <p><a href="{% url 'core:cart' %}">Back to cart</a></p>
+        </div>
+    </div>
+</body>
+</html>
