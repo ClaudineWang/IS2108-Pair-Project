@@ -1,13 +1,144 @@
 {% extends "adminpanel/base.html" %}
 
 {% block title %}{{ page_title }}{% endblock %}
-{% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">{{ submit_button_text }}</button>
-    <a href="{% url 'adminpanel:product_list' %}">Cancel</a>
-</form>
+<style>
+    .product-form-page {
+        max-width: 820px;
+    }
+
+    .product-form-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 24px 28px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .product-form-card h1 {
+        margin: 0 0 22px;
+        font-size: 24px;
+    }
+
+    form.product-form {
+        display: block;
+        margin: 0;
+    }
+
+    .product-form p {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        gap: 8px 16px;
+        align-items: center;
+        margin: 0 0 14px;
+    }
+
+    .product-form label {
+        font-weight: 600;
+    }
+
+    .product-form input:not([type="checkbox"]):not([type="file"]),
+    .product-form select,
+    .product-form textarea {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .product-form textarea {
+        min-height: 90px;
+        resize: vertical;
+    }
+
+    .product-form input[type="checkbox"] {
+        width: auto;
+        justify-self: start;
+    }
+
+    .product-form input[type="file"] {
+        width: 100%;
+    }
+
+    .product-form .errorlist {
+        grid-column: 2;
+        margin: -4px 0 0;
+        padding: 0;
+        color: #b91c1c;
+        font-size: 13px;
+        list-style: none;
+    }
+
+    .product-form .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 22px;
+    }
+
+    .product-form .cancel-button {
+        background: #6b7280;
+    }
+
+    @media (max-width: 640px) {
+        .product-form-card {
+            padding: 20px;
+        }
+
+        .product-form p {
+            display: block;
+        }
+
+        .product-form label {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .product-form .errorlist {
+            margin: 4px 0;
+        }
+    }
+</style>
+
+<div class="product-form-page">
+    <div class="product-form-card">
+        <h1>{{ page_title }}</h1>
+
+        <form method="post" enctype="multipart/form-data" class="product-form">
+            {% csrf_token %}
+            <input type="hidden" name="currency" id="form-currency" value="{{ selected_currency }}">
+
+            {{ form.as_p }}
+
+            <div class="form-actions">
+                <button type="submit">{{ submit_button_text }}</button>
+
+                <button
+                    type="button"
+                    class="cancel-button"
+                    data-cancel-url="{% url 'adminpanel:product_list' %}?currency={{ selected_currency }}"
+                >
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cancelButton = document.querySelector("[data-cancel-url]");
+        if (cancelButton) {
+            cancelButton.addEventListener("click", function () {
+                sessionStorage.removeItem("admin_form_draft");
+                window.location.href = this.dataset.cancelUrl;
+            });
+        }
+
+        const form = document.querySelector("form");
+        if (form) {
+            form.addEventListener("submit", function () {
+                sessionStorage.removeItem("admin_form_draft");
+            });
+        }
+    });
+</script>
 {% endblock %}

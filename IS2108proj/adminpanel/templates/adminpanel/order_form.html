@@ -48,8 +48,16 @@
         <tr>
             <td>{{ item.product.name }}</td>
             <td>{{ item.quantity }}</td>
-            <td>${{ item.price_at_purchase|floatformat:2 }}</td>
-            <td>${{ item.subtotal|floatformat:2 }}</td>
+            <td>
+                {{ selected_currency }} {{ item.display_price_at_purchase|default:item.price_at_purchase|floatformat:2 }}
+            </td>
+            <td>
+                {{ selected_currency }} {{ item.display_subtotal|default:item.subtotal|floatformat:2 }}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No items found for this order.</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -57,21 +65,22 @@
 
 <p>
     <strong>Total Price:</strong>
-    ${{ order.total_amount|floatformat:2 }}
+    {{ selected_currency }} {{ order.display_total_amount|floatformat:2 }}
 </p>
 
 <p>
     <strong>Delivery Fee:</strong>
-    ${{ order.delivery_fee|floatformat:2 }}
+    {{ selected_currency }} {{ order.display_delivery_fee|floatformat:2 }}
 </p>
 
 <p>
     <strong>Grand Total:</strong>
-    ${{ order.grand_total|floatformat:2 }}
+    {{ selected_currency }} {{ order.display_grand_total|floatformat:2 }}
 </p>
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    <input type="hidden" name="currency" value="{{ selected_currency }}">
     {{ form.as_p }}
     <button type="submit">{{ submit_button_text }}</button>
     <a href="{% url 'adminpanel:order_list' %}">Cancel</a>

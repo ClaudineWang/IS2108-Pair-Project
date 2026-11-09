@@ -53,30 +53,29 @@
         {{ subscription.bundle.name }}
     </p>
 
-    <p>
-        <strong>Bundle Price:</strong>
-        ${{ subscription.bundle.price_per_delivery }}
-    </p>
+<p>
+    <strong>Bundle Price:</strong>
+    {{ selected_currency }} {{ subscription.bundle.display_price|floatformat:2 }}
+</p>
 
-    <p>
-        <strong>Start Date:</strong>
-        {{ subscription.start_date|date:"d M Y" }}
-    </p>
+<p>
+    <strong>Start Date:</strong>
+    {{ subscription.start_date|date:"d M Y" }}
+</p>
 
-    <p>
-        <strong>Next Delivery Date:</strong>
-        {% if subscription.next_delivery_date %}
-            {{ subscription.next_delivery_date|date:"d M Y" }}
-        {% else %}
-            Not scheduled
-        {% endif %}
-    </p>
+<p>
+    <strong>Next Delivery Date:</strong>
+    {% if subscription.next_delivery_date %}
+        {{ subscription.next_delivery_date|date:"d M Y" }}
+    {% else %}
+        Not scheduled
+    {% endif %}
+</p>
 
-    <p>
-        <strong>Status:</strong>
-        {{ subscription.get_status_display }}
-    </p>
+<p>
+    <strong>Status:</strong>
+    {{ subscription.get_status_display }}
+</p>
 
-
-<a href="{% url 'adminpanel:customer_subscription_list' %}">Cancel</a>
+<a href="{% url 'adminpanel:customer_subscription_list' %}?currency={{ selected_currency }}">Back</a>
 {% endblock %}
