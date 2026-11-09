@@ -16,10 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
-app_name = 'adminpanel'
+from . import views
 
 urlpatterns = [
-    path('admin/', include('adminpanel.urls', namespace='adminpanel')),
-    
+    path("admin/", include("adminpanel.urls", namespace="adminpanel")),
+    path("django-admin/", admin.site.urls),
+    path("", views.home, name="home"),
+    path("shop/", include("core.urls", namespace="core")),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("customer/", include("customer.urls", namespace="customer")),
 ]

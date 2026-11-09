@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}BrewMatch Home{% endblock %}
+
+{% block content %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .hero h1 {
+        margin-bottom: 28px;
+        font-size: 2.2rem;
+    }
+
+    .cta-row {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .cta-btn {
+        display: inline-block;
+        background: #1d4ed8;
+        color: white;
+        text-decoration: none;
+        padding: 14px 26px;
+        border-radius: 10px;
+        font-weight: 700;
+        transition: 0.2s ease;
+        box-shadow: 0 4px 10px rgba(29, 78, 216, 0.2);
+    }
+
+    .cta-btn:hover {
+        background: #1e40af;
+        text-decoration: none;
+    }
+
+    .cta-btn.secondary {
+        background: #111827;
+    }
+
+    .cta-btn.secondary:hover {
+        background: #1f2937;
+    }
+</style>
+
+<div class="hero">
+    <h1>Enjoy freshly roasted coffee, tailored to your taste</h1>
+
+    <div class="cta-row">
+        <a href="{% url 'customer:customer_login' %}" class="cta-btn">Log in</a>
+        <a href="{% url 'customer:customer_signup' %}" class="cta-btn secondary">Sign up</a>
+    </div>
+</div>
+{% endblock %}
