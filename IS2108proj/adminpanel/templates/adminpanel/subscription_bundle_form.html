@@ -1,0 +1,173 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<style>
+    .bundle-form {
+        max-width: 900px;
+    }
+
+    .bundle-form form {
+        display: block;
+    }
+
+    .bundle-form .section {
+        display: block;
+        width: 100%;
+        clear: both;
+    }
+
+    .section {
+        margin-top: 24px;
+        display: block;
+        clear: both;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+    }
+
+    th,
+    td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background: #f3f4f6;
+    }
+
+    .inline-form {
+        display: grid;
+        grid-template-columns: 1fr 160px;
+        gap: 12px;
+        align-items: end;
+        margin-top: 12px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 24px;
+    }
+
+    .delete-button {
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .save-button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 16px;
+        cursor: pointer;
+    }
+</style>
+
+<div class="bundle-form">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="section">
+            <h2>Bundle Details</h2>
+            {{ subscription_bundle_form.non_field_errors }}
+            {{ subscription_bundle_form.as_p }}
+        </div>
+
+        {{ bundle_item_formset.management_form }}
+
+        <div class="section">
+            <h2>Current Products</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for form in bundle_item_formset %}
+                    {% if form.instance.pk %}
+                    <tr id="item-row-{{ forloop.counter }}">
+                        <td>
+                            {{ form.id }}
+                            {{ form.product.errors }}
+                            {{ form.product }}
+                        </td>
+
+                        <td>
+                            {{ form.quantity.errors }}
+                            {{ form.quantity }}
+                        </td>
+
+                        <td>
+                            {{ form.DELETE.as_hidden }}
+                            <button type="button" class="delete-button"
+                                onclick="deleteItem('item-row-{{ forloop.counter }}', 'id_{{ form.prefix }}-DELETE')">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <br>
+
+        <div class="section">
+            <h2>Add New Product</h2>
+
+            {% for form in bundle_item_formset %}
+            {% if not form.instance.pk %}
+            <div class="inline-form">
+                <div>
+                    {{ form.product.label_tag }}
+                    {{ form.product }}
+                    {{ form.product.errors }}
+                </div>
+
+                <div>
+                    {{ form.quantity.label_tag }}
+                    {{ form.quantity }}
+                    {{ form.quantity.errors }}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="save-button">
+                {{ submit_button_text }}
+            </button>
+
+            <a href="{% url 'adminpanel:subscription_bundle_list' %}">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function deleteItem(rowId, deleteInputId) {
+        document.getElementById(deleteInputId).value = "on";
+        document.getElementById(rowId).style.display = "none";
+    }
+</script>
+{% endblock %}

@@ -7,17 +7,17 @@ from django.contrib.auth.models import User
 class CustomerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='customer_profile')
     phone_number = models.CharField(max_length=20, blank=True)
-    delivery_address = models.TextField(blank=True)
+    delivery_address = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return self.user.username
 
 class Category(models.Model):
-    
+
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    
+
     def __str__(self):
         return self.name
 
@@ -115,17 +115,17 @@ class Order(models.Model):
     grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     def __str__(self):
         return f"Order {self.id}"
-    
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)
-    
+
     @property
     def subtotal(self):
         return self.quantity * self.price_at_purchase
-    
+
     def __str__(self):
         return f" {self.product.name} in Order {self.order.id}"
 
@@ -198,4 +198,4 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Review ({self.rating}/5) by {self.customer.username} for {self.product.name}"
-    
+
