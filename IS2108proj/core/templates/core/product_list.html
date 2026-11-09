@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .filters { margin-bottom: 20px; }
+        .filters a {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #333;
+        }
+        .filters a.active {
+            background: #1f2937;
+            color: white;
+        }
+        .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .product-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            background: #fafafa;
+        }
+        .product-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .product-card h2 { margin: 0 0 8px; }
+        .product-card a { text-decoration: none; color: #0b5ed7; }
+        .price { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Products</h1>
+    <p><a href="{% url 'core:cart' %}">Cart ({{ cart_count }})</a></p>
+
+    <div class="filters">
+        <a href="?" {% if not selected_category %}class="active"{% endif %}>All</a>
+        {% for category in categories %}
+            <a href="?category={{ category.id }}"
+               {% if selected_category|stringformat:"s" == category.id|stringformat:"s" %}class="active"{% endif %}>
+                {{ category.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {% if products %}
+        <div class="products">
+            {% for product in products %}
+                <div class="product-card">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% endif %}
+
+                    <h2><a href="{% url 'core:product_detail' product.id %}">{{ product.name }}</a></h2>
+                    <p>{{ product.category.name }}</p>
+                    <p>{{ product.description|truncatewords:18 }}</p>
+                    <p class="price">${{ product.price }}</p>
+                    <p>Status: {{ product.stock_status }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No products available for this category.</p>
+    {% endif %}
+</body>
+</html>
