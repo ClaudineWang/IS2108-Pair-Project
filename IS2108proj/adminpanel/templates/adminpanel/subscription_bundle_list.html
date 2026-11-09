@@ -42,8 +42,8 @@
         <option value="">All Billing Frequencies</option>
 
         {% for frequency in billing_frequencies %}
-        <option value="{{ frequency.0 }}" {% if billing_frequency_filter == frequency.0 %}selected{% endif %}>
-            {{ frequency.0 }}
+        <option value="{{ frequency.0}}" {% if billing_frequency_filter == frequency.0 %}selected{% endif %}>
+            {{ frequency.1 }}
         </option>
         {% endfor %}
     </select>

@@ -14,12 +14,18 @@ class CustomerProfile(models.Model):
         return self.user.username
 
 class Category(models.Model):
+    CATEGORY_CHOICES = [
+        ('whole_bean', 'Whole Bean'),
+        ('ground', 'Ground'),
+        ('instant', 'Instant'),
+        ('drip_bag', 'Drip Bag'),
+    ]
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, choices=CATEGORY_CHOICES, unique=True)
     description = models.TextField(blank=True)
 
     def __str__(self):
-        return self.name
+        return self.get_name_display() 
 
 class Product(models.Model):
     CAFFEINE_TYPE = [
@@ -87,10 +93,10 @@ class CustomerSubscription(models.Model):
     bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name='customer_subscriptions')
     start_date = models.DateTimeField(auto_now_add=True)
     next_delivery_date = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
     def __str__(self):
-        return f"{self.customer.username} - {self.bundle.name} ({self.status})"
+        return f"{self.customer.user.username} - {self.bundle.name} ({self.status})"
 
 class Order(models.Model):
     ORDER_TYPE = [
@@ -146,13 +152,35 @@ class BundleItem(models.Model):
         return f"{self.product.name} in {self.subscription_bundle.name}"
 
 class QuestionnaireResponse(models.Model):
+    ROAST_LEVEL_CHOICES = [
+        ('light', 'Light'),
+        ('medium', 'Medium'),
+        ('dark', 'Dark'),
+    ]
+    FLAVOUR_CHOICES = [
+        ('fruity', 'Fruity'),
+        ('nutty', 'Nutty'),
+        ('chocolatey', 'Chocolatey'),
+        ('floral', 'Floral'),
+        ('spicy', 'Spicy'),
+    ]
+    BREWING_METHOD_CHOICES = [
+        ('espresso', 'Espresso'),
+        ('french_press', 'French Press'),
+        ('pour_over', 'Pour Over'),
+        ('filter', 'Filter'),
+    ]
+    CAFFEINE_TYPE_CHOICES = [
+        ('caffeinated', 'Caffeinated'),
+        ('decaf', 'Decaf'),
+    ]
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='questionnaire_responses')
-    preferred_roast = models.CharField(max_length=50)
-    preferred_flavour = models.CharField(max_length=50)
-    preferred_brewing_method = models.CharField(max_length=50)
-    preferred_caffeine_type = models.CharField(max_length=50)
-    preferred_category = models.CharField(max_length=50, blank=True, null=True)
-    predicted_category = models.CharField(max_length=50)
+    preferred_roast = models.CharField(max_length=50, choices=ROAST_LEVEL_CHOICES)
+    preferred_flavour = models.CharField(max_length=50, choices=FLAVOUR_CHOICES)
+    preferred_brewing_method = models.CharField(max_length=50, choices=BREWING_METHOD_CHOICES)
+    preferred_caffeine_type = models.CharField(max_length=50, choices=CAFFEINE_TYPE_CHOICES)
+    preferred_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="questionnaire_preferences")
+    predicted_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="questionnaire_predictions")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

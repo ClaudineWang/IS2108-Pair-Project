@@ -49,29 +49,27 @@
     <select name="roast_level">
         <option value="">All roast levels</option>
 
-        <option value="light" {% if roast_filter == "light" %}selected{% endif %}>
-            Light
-        </option>
-
-        <option value="medium" {% if roast_filter == "medium" %}selected{% endif %}>
-            Medium
-        </option>
-
-        <option value="dark" {% if roast_filter == "dark" %}selected{% endif %}>
-            Dark
-        </option>
+        {% for value, label in roast_levels %}
+            <option
+                value="{{ value }}"
+                {% if roast_filter == value %}selected{% endif %}
+            >
+                {{ label }}
+            </option>
+        {% endfor %}
     </select>
 
     <select name="caffeine_type">
         <option value="">All caffeine types</option>
 
-        <option value="caffeinated" {% if caffeine_filter == "caffeinated" %}selected{% endif %}>
-            Caffeinated
-        </option>
-
-        <option value="decaf" {% if caffeine_filter == "decaf" %}selected{% endif %}>
-            Decaf
-        </option>
+        {% for value, label in caffeine_types %}
+            <option
+                value="{{ value }}"
+                {% if caffeine_filter == value %}selected{% endif %}
+            >
+                {{ label }}
+            </option>
+        {% endfor %}
     </select>
 
     <button type="submit">Search</button>
