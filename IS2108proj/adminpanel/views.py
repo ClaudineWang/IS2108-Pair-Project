@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.shortcuts import redirect, render
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet, ReviewForm, AdminLoginForm
 from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription
 from django.db import models
@@ -8,6 +8,7 @@ from django.db.models import Q, Count
 from django.db.models.functions import Coalesce
 from core.services import advance_subscription_delivery
 from core.currency import RATES as CURRENCY_RATES, get_selected_currency
+from django.views.decorators.http import require_POST
 
 
 
@@ -615,3 +616,8 @@ def admin_login(request):
         "form": form,
         "page_title": "Admin Login",
     })
+
+@require_POST
+def admin_logout(request):
+    logout(request)
+    return redirect("adminpanel:admin_login")
