@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 24px;
+        }
+
+        .topbar nav {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .topbar a {
+            text-decoration: none;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+
+        .page-title {
+            margin: 0;
+        }
+
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        input, select, button {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #1d4ed8;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-top: 12px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        .status-visible {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-hidden {
+            color: red;
+            font-weight: bold;
+        }
+
+        .page-actions {
+            margin-top: 18px;
+        }
+
+        a {
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <header class="topbar">
+            <h1 class="page-title">BrewMatch Admin</h1>
+            <nav>
+                <a href="{% url 'adminpanel:product_list' %}">Products</a>
+                <a href="{% url 'adminpanel:inventory_list' %}">Inventory</a>
+                <a href="{% url 'adminpanel:order_list' %}">Orders</a>
+                <a href="{% url 'adminpanel:customer_list' %}">Customers</a>
+                <a href="{% url 'adminpanel:subscription_bundle_list' %}">Subscriptions</a>
+                <a href="{% url 'adminpanel:review_list' %}">Reviews</a>
+            </nav>
+        </header>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>
