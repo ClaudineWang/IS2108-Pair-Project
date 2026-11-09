@@ -23,6 +23,7 @@
     }
 </style>
 <form method="get">
+    <input type="hidden" name="currency" value="{{ selected_currency }}">
     <input type="text" name="search" placeholder="Search by Bundle Name or Customer Name" value="{{ search_query }}">
 
     <select name="status">
@@ -37,7 +38,7 @@
 
     <button type="submit">Search</button>
 
-    <a href="{% url 'adminpanel:customer_subscription_list' %}">
+    <a href="{% url 'adminpanel:customer_subscription_list' %}?currency={{ selected_currency }}">
         Reset
     </a>
 </form>
@@ -69,7 +70,7 @@
                 {% endif %}</td>
             <td>{{ subscription.get_status_display }}</td>
             <td>
-                <a href="{% url 'adminpanel:customer_subscription_view' subscription.id %}">View Details</a>
+                <a href="{% url 'adminpanel:customer_subscription_view' subscription.id %}?currency={{ selected_currency }}">View Details</a>
             </td>
         </tr>
         {% empty %}

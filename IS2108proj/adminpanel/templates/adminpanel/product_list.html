@@ -33,6 +33,7 @@
     }
 </style>
 <form method="get">
+     <input type="hidden" name="currency" value="{{ selected_currency }}">
     <input type="text" name="search" placeholder="Search by product name" value="{{ search_query }}">
 
     <select name="category">
@@ -88,6 +89,7 @@
             <th>Category</th>
             <th>Roast Level</th>
             <th>Caffeine Type</th>
+            <th>Price</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -101,6 +103,7 @@
             <td>{{ product.category.name }}</td>
             <td>{{ product.get_roast_level_display }}</td>
             <td>{{ product.get_caffeine_type_display }}</td>
+            <td>{{ selected_currency }} {{ product.display_price|floatformat:2 }}</td>
             <td>{% if product.is_visible %}
                 <span class="status-visible">Visible</span>
                 {% else %}
@@ -108,18 +111,18 @@
                 {% endif %}
             </td>
             <td>
-                <a href="{% url 'adminpanel:product_update' product.id %}">View / Edit</a>
+                <a href="{% url 'adminpanel:product_update' product.id %}?currency={{ selected_currency }}">View / Edit</a>
             </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7">No products found.</td>
+            <td colspan="8">No products found.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
 <div class="page-actions">
-    <a href="{% url 'adminpanel:product_add' %}">Add New Product</a>
+    <a href="{% url 'adminpanel:product_add' %}?currency={{ selected_currency }}">Add New Product</a>
 </div>
 {% endblock %}

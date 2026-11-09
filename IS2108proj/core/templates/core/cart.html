@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .cart-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .cart-table th, .cart-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .summary { margin-top: 30px; border: 1px solid #ddd; padding: 16px; max-width: 400px; }
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .actions form { display: inline; }
+        input[type="number"] { width: 60px; }
+        .remove-btn { color: #b00020; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>Your Cart</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    {% if cart_items %}
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>${{ item.product.price }}</td>
+                        <td>
+                            <form method="post" action="{% url 'core:update_cart_item' item.id %}">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
+                                <button type="submit">Update</button>
+                            </form>
+                        </td>
+                        <td>${{ item.subtotal }}</td>
+                        <td>
+                            <form method="post" action="{% url 'core:remove_from_cart' item.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="remove-btn">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <h3>Cart Summary</h3>
+            <p>Items: {{ total_items }}</p>
+            <p>Subtotal: ${{ subtotal }}</p>
+            <p>Total: ${{ subtotal }}</p>
+            <a href="{% url 'core:checkout' %}">Proceed to checkout</a>
+            <br><br>
+            <a href="{% url 'core:product_list' %}">Continue shopping</a>
+        </div>
+    {% else %}
+        <p>Your cart is empty.</p>
+        <a href="{% url 'core:product_list' %}">Browse products</a>
+    {% endif %}
+</body>
+</html>

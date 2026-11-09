@@ -9,16 +9,6 @@
         max-width: 900px;
     }
 
-    .bundle-form form {
-        display: block;
-    }
-
-    .bundle-form .section {
-        display: block;
-        width: 100%;
-        clear: both;
-    }
-
     .section {
         margin-top: 24px;
         display: block;
@@ -74,11 +64,22 @@
         padding: 10px 16px;
         cursor: pointer;
     }
+
+    .bundle-form>form {
+        display: block !important;
+        width: 100%;
+    }
+
+    .bundle-form .section {
+        width: 100%;
+        display: block;
+    }
 </style>
 
 <div class="bundle-form">
-    <form method="post">
+    <form method="post" class="bundle-main-form">
         {% csrf_token %}
+        <input type="hidden" name="currency" id="form-currency" value="{{ selected_currency }}">
 
         <div class="section">
             <h2>Bundle Details</h2>
@@ -89,9 +90,11 @@
         {{ bundle_item_formset.management_form }}
 
         <div class="section">
-            <h2>Current Products</h2>
+            <h2>Products in Bundle</h2>
 
-            <table>
+
+
+            <table id="products-table">
                 <thead>
                     <tr>
                         <th>Product</th>
@@ -100,56 +103,57 @@
                     </tr>
                 </thead>
 
-                <tbody>
+                <tbody id="product-rows">
+
                     {% for form in bundle_item_formset %}
-                    {% if form.instance.pk %}
-                    <tr id="item-row-{{ forloop.counter }}">
+                    <tr class="product-row">
+                        {{ form.id }}
+
                         <td>
-                            {{ form.id }}
-                            {{ form.product.errors }}
                             {{ form.product }}
+                            {{ form.product.errors }}
                         </td>
 
                         <td>
-                            {{ form.quantity.errors }}
                             {{ form.quantity }}
+                            {{ form.quantity.errors }}
                         </td>
 
                         <td>
                             {{ form.DELETE.as_hidden }}
-                            <button type="button" class="delete-button"
-                                onclick="deleteItem('item-row-{{ forloop.counter }}', 'id_{{ form.prefix }}-DELETE')">
+
+                            <button type="button" class="delete-button" onclick="removeProductRow(this)">
                                 Delete
                             </button>
                         </td>
                     </tr>
-                    {% endif %}
                     {% endfor %}
+
                 </tbody>
             </table>
-        </div>
-        <br>
+            <template id="empty-product-form">
+                <tr class="product-row">
+                    <td>
+                        {{ bundle_item_formset.empty_form.product }}
+                    </td>
 
-        <div class="section">
-            <h2>Add New Product</h2>
+                    <td>
+                        {{ bundle_item_formset.empty_form.quantity }}
+                    </td>
 
-            {% for form in bundle_item_formset %}
-            {% if not form.instance.pk %}
-            <div class="inline-form">
-                <div>
-                    {{ form.product.label_tag }}
-                    {{ form.product }}
-                    {{ form.product.errors }}
-                </div>
+                    <td>
+                        {{ bundle_item_formset.empty_form.DELETE.as_hidden }}
 
-                <div>
-                    {{ form.quantity.label_tag }}
-                    {{ form.quantity }}
-                    {{ form.quantity.errors }}
-                </div>
-            </div>
-            {% endif %}
-            {% endfor %}
+                        <button type="button" class="delete-button" onclick="removeProductRow(this)">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            </template>
+
+            <button type="button" class="save-button" onclick="addProductRow()">
+                Add Product
+            </button>
         </div>
 
         <div class="actions">
@@ -157,17 +161,226 @@
                 {{ submit_button_text }}
             </button>
 
-            <a href="{% url 'adminpanel:subscription_bundle_list' %}">
+            <button type="button"
+                data-cancel-url="{% url 'adminpanel:subscription_bundle_list' %}?currency={{ selected_currency }}">
                 Cancel
-            </a>
+            </button>
         </div>
     </form>
 </div>
 
+
 <script>
-    function deleteItem(rowId, deleteInputId) {
-        document.getElementById(deleteInputId).value = "on";
-        document.getElementById(rowId).style.display = "none";
+    function addProductRow() {
+        const totalForms =
+            document.getElementById(
+                "id_{{ bundle_item_formset.prefix }}-TOTAL_FORMS"
+            );
+
+        const currentFormCount =
+            parseInt(totalForms.value);
+
+        const template =
+            document.getElementById(
+                "empty-product-form"
+            ).innerHTML;
+
+        const newRow = template.replace(
+            /__prefix__/g,
+            currentFormCount
+        );
+
+        document
+            .getElementById("product-rows")
+            .insertAdjacentHTML(
+                "beforeend",
+                newRow
+            );
+
+        totalForms.value =
+            currentFormCount + 1;
     }
+
+
+    function removeProductRow(button) {
+        const row = button.closest("tr");
+
+        const deleteInput =
+            row.querySelector(
+                'input[name$="-DELETE"]'
+            );
+
+        if (deleteInput) {
+            deleteInput.value = "on";
+        }
+
+        row.style.display = "none";
+    }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cancelButton = document.querySelector("[data-cancel-url]");
+        if (cancelButton) {
+            cancelButton.addEventListener("click", function () {
+                sessionStorage.removeItem("subscription_bundle_draft");
+                window.location.href = this.dataset.cancelUrl;
+            });
+        }
+
+        const form = document.querySelector(".bundle-main-form");
+        if (form) {
+            form.addEventListener("submit", function () {
+                sessionStorage.removeItem("subscription_bundle_draft");
+                sessionStorage.removeItem("admin_form_draft");
+            });
+        }
+    });
+</script>
+<script>
+    const bundleDraftKey =
+        "subscription_bundle_draft";
+
+    const bundleCurrencyRates = {
+        SGD: 1,
+        USD: 0.74,
+        EUR: 0.68,
+    };
+
+    function convertBundleAmount(value, fromCurrency, toCurrency) {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+            return value;
+        }
+
+        const fromRate = bundleCurrencyRates[fromCurrency] || 1;
+        const toRate = bundleCurrencyRates[toCurrency] || 1;
+        return ((numeric / fromRate) * toRate).toFixed(2);
+    }
+
+
+    window.saveDraftBeforeCurrencyChange = function (oldCurrency, newCurrency) {
+        const form = document.querySelector(
+            ".bundle-main-form"
+        );
+
+        if (!form) {
+            return;
+        }
+
+        const formData = new FormData(form);
+        const draft = {};
+
+        for (const [name, value] of formData.entries()) {
+            if (name === "currency") {
+                continue;
+            }
+
+            draft[name] = value;
+        }
+
+        if (draft["price_per_delivery"] !== undefined) {
+            draft["price_per_delivery"] = convertBundleAmount(
+                draft["price_per_delivery"],
+                oldCurrency,
+                newCurrency
+            );
+        }
+
+        const hiddenRows = [];
+
+        document
+            .querySelectorAll(".product-row")
+            .forEach(function (row) {
+                if (row.style.display === "none") {
+                    const deleteInput =
+                        row.querySelector(
+                            'input[name$="-DELETE"]'
+                        );
+
+                    if (deleteInput) {
+                        hiddenRows.push(
+                            deleteInput.name
+                        );
+                    }
+                }
+            });
+
+        draft.hiddenRows = hiddenRows;
+
+        sessionStorage.setItem(
+            bundleDraftKey,
+            JSON.stringify(draft)
+        );
+    };
+
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+            const savedDraft =
+                sessionStorage.getItem(
+                    bundleDraftKey
+                );
+
+            if (!savedDraft) {
+                return;
+            }
+
+            const draft = JSON.parse(savedDraft);
+            const form = document.querySelector(
+                ".bundle-main-form"
+            );
+
+            const totalForms = form.querySelector(
+                '[name$="-TOTAL_FORMS"]'
+            );
+
+            if (!totalForms) {
+                return;
+            }
+
+            const desiredFormCount = parseInt(
+                draft[totalForms.name],
+                10
+            );
+
+            while (
+                Number.isFinite(desiredFormCount) &&
+                parseInt(totalForms.value, 10) < desiredFormCount
+            ) {
+                addProductRow();
+            }
+
+            for (const [name, value] of Object.entries(
+                draft
+            )) {
+                if (name === "hiddenRows" || name === "currency") {
+                    continue;
+                }
+
+                const field = form.querySelector(
+                    `[name="${name}"]`
+                );
+
+                if (field) {
+                    field.value = value;
+                }
+            }
+
+            (draft.hiddenRows || []).forEach(function (name) {
+                const deleteInput = form.querySelector(
+                    `[name="${name}"]`
+                );
+
+                if (deleteInput) {
+                    deleteInput.value = "on";
+
+                    deleteInput
+                        .closest(".product-row")
+                        .style.display = "none";
+                }
+            });
+        }
+    );
 </script>
 {% endblock %}

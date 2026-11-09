@@ -32,7 +32,10 @@
         font-weight: bold;
     }
 </style>
+
 <form method="get">
+    <input type="hidden" name="currency" value="{{ selected_currency }}">
+
     <input type="text" name="search" placeholder="Search by bundle name" value="{{ search_query }}">
 
     <select name="billing_frequency">
@@ -59,7 +62,7 @@
 
     <button type="submit">Search</button>
 
-    <a href="{% url 'adminpanel:subscription_bundle_list' %}">
+    <a href="{% url 'adminpanel:subscription_bundle_list' %}?currency={{ selected_currency }}">
         Reset
     </a>
 </form>
@@ -80,7 +83,7 @@
         {% for subscription_bundle in subscription_bundles %}
         <tr>
             <td>{{ subscription_bundle.name }}</td>
-            <td>${{ subscription_bundle.price_per_delivery|floatformat:2 }}</td>
+            <td>{{ selected_currency }} {{ subscription_bundle.display_price|floatformat:2 }}</td>
             <td>{{ subscription_bundle.billing_frequency }}</td>
             <td>{{ subscription_bundle.total_items }}</td>
             <td>{% if subscription_bundle.is_active %}
@@ -90,7 +93,9 @@
                 {% endif %}
             </td>
             <td>
-                <a href="{% url 'adminpanel:subscription_bundle_update' subscription_bundle.id %}">View / Edit</a>
+                <a href="{% url 'adminpanel:subscription_bundle_update' subscription_bundle.id %}?currency={{ selected_currency }}">
+                    View / Edit
+                </a>
             </td>
         </tr>
         {% empty %}
@@ -102,11 +107,11 @@
 </table>
 
 <div style="margin-top: 20px;">
-    <a href="{% url 'adminpanel:subscription_bundle_add' %}">Add New Subscription Bundle</a>
+    <a href="{% url 'adminpanel:subscription_bundle_add' %}?currency={{ selected_currency }}">Add New Subscription Bundle</a>
 </div>
 
 <div style="margin-top: 12px;">
-    <a href="{% url 'adminpanel:customer_subscription_list' %}">
+    <a href="{% url 'adminpanel:customer_subscription_list' %}?currency={{ selected_currency }}">
         <button type="button">View Customer Subscription List</button>
     </a>
 </div>
