@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from .forms import CustomerSignupForm
+from .forms import CustomerSignupForm, QuestionnaireResponseForm
 
 
 def customer_signup(request):
@@ -35,4 +35,18 @@ def customer_login(request):
 
     return render(request, "customer/login.html", {
         "message": message
+    })
+def customer_questionnaire(request):
+    if request.method == "POST":
+        form = QuestionnaireResponseForm(request.POST)
+        if form.is_valid():
+            questionnaire_response = form.save(commit=False)
+            questionnaire_response.customer = request.user
+            questionnaire_response.save()
+            return redirect("customer_home")
+    else:
+        form = QuestionnaireResponseForm()
+
+    return render(request, "customer/questionnaire.html", {
+        "form": form
     })

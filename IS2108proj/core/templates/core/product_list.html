@@ -47,7 +47,7 @@
         {% for category in categories %}
             <a href="?category={{ category.id }}"
                {% if selected_category|stringformat:"s" == category.id|stringformat:"s" %}class="active"{% endif %}>
-                {{ category.name }}
+                {{ category.get_name_display }}
             </a>
         {% endfor %}
     </div>
