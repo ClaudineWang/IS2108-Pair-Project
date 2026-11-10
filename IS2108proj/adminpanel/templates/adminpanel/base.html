@@ -193,10 +193,6 @@
                     Bundles
                 </a>
 
-                <a class="nav-link {% if request.resolver_match.url_name == 'customer_subscription_list' %}active{% endif %}"
-                    href="{% url 'adminpanel:customer_subscription_list' %}">
-                    Customer Subscriptions
-                </a>
 
                 <a class="nav-link {% if request.resolver_match.url_name == 'review_list' %}active{% endif %}"
                     href="{% url 'adminpanel:review_list' %}">
