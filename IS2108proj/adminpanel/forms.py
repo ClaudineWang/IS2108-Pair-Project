@@ -10,6 +10,11 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = "__all__"
+        widgets = {
+            "image": forms.FileInput(
+                attrs={"accept": "image/*"}
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         self.currency = normalize_currency(kwargs.pop("currency", "SGD"))

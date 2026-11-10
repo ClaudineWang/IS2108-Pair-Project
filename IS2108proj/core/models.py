@@ -25,7 +25,7 @@ class Category(models.Model):
     description = models.TextField(blank=True)
 
     def __str__(self):
-        return self.get_name_display() 
+        return self.get_name_display()
 
 class Product(models.Model):
     CAFFEINE_TYPE = [

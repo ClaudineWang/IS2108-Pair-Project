@@ -1,0 +1,137 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Restock Predictions{% endblock %}
+
+{% block content %}
+
+<style>
+    .prediction-header {
+        margin-bottom: 24px;
+    }
+
+
+    .prediction-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .prediction-table th,
+    .prediction-table td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .prediction-table th {
+        background: #f2f2f2;
+    }
+
+    .restock-needed {
+        color: #dc2626;
+        font-weight: bold;
+    }
+
+    .no-restock {
+        color: #16a34a;
+        font-weight: bold;
+    }
+
+    .stock-low {
+        color: #ea580c;
+        font-weight: bold;
+    }
+
+    .stock-out {
+        color: #dc2626;
+        font-weight: bold;
+    }
+
+    .stock-good {
+        color: #16a34a;
+        font-weight: bold;
+    }
+</style>
+
+<div class="prediction-header">
+    <h1>Restock Predictions</h1>
+    <p>
+        Predicted product demand for the upcoming week.
+    </p>
+</div>
+
+
+
+<table class="prediction-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Current Stock</th>
+            <th>Predicted Demand</th>
+            <th>Suggested Restock</th>
+            <th>Stock Status</th>
+            <th>Recommendation</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for prediction in predictions %}
+        <tr>
+            <td>{{ prediction.product_name }}</td>
+
+            <td>
+                {{ prediction.current_stock }}
+            </td>
+
+            <td>
+                {{ prediction.predicted_demand }} units
+            </td>
+
+            <td>
+                {% if prediction.suggested_restock > 0 %}
+                    <span class="restock-needed">
+                        {{ prediction.suggested_restock }} units
+                    </span>
+                {% else %}
+                    <span class="no-restock">
+                        0 units
+                    </span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if prediction.stock_status == "Out of Stock" %}
+                    <span class="stock-out">
+                        {{ prediction.stock_status }}
+                    </span>
+                {% elif prediction.stock_status == "Low in Stock" %}
+                    <span class="stock-low">
+                        {{ prediction.stock_status }}
+                    </span>
+                {% else %}
+                    <span class="stock-good">
+                        {{ prediction.stock_status }}
+                    </span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if prediction.suggested_restock > 0 %}
+                    Restock recommended
+                {% else %}
+                    Stock level is sufficient
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">
+                No predictions are currently available.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% include "includes/pagination.html" %}
+
+{% endblock %}

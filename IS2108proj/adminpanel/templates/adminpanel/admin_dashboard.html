@@ -1,0 +1,362 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .dashboard-heading {
+        margin-bottom: 24px;
+    }
+
+    .dashboard-heading h1 {
+        font-size: 32px;
+        font-weight: 800;
+        color: #17324d;
+        margin-bottom: 6px;
+    }
+
+    .dashboard-heading p {
+        color: #64748b;
+        margin: 0;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 5px solid #2563eb;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .metric-card.revenue {
+        border-left-color: #16a34a;
+    }
+
+    .metric-card.warning {
+        border-left-color: #f97316;
+    }
+
+    .metric-card.purple {
+        border-left-color: #7c3aed;
+    }
+
+    .metric-card h3 {
+        margin: 0 0 10px;
+        color: #64748b;
+        font-size: 14px;
+        text-transform: uppercase;
+    }
+
+    .metric-card strong {
+        font-size: 28px;
+        color: #17324d;
+    }
+
+    .chart-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .dashboard-card h2 {
+        margin-top: 0;
+        color: #17324d;
+        font-size: 20px;
+    }
+
+    .alert-box {
+        background: #fff7ed;
+        border-left: 5px solid #f97316;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        width: 100%;
+    }
+
+    .alert-box h2 {
+        color: #c2410c;
+        margin-top: 0;
+    }
+
+    .status-low {
+        color: #ea580c;
+        font-weight: bold;
+    }
+
+    .status-out {
+        color: #dc2626;
+        font-weight: bold;
+    }
+
+    @media (max-width: 900px) {
+        .metric-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 550px) {
+        .metric-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .equal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+}
+
+    .bundle-card {
+        width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    }
+
+    .bundle-chart-container {
+        position: relative;
+        height: 220px;
+    }
+</style>
+
+<div class="dashboard-heading">
+    <h1>Analytics Dashboard</h1>
+    <p>Overview of sales, customers, subscriptions, and inventory.</p>
+</div>
+
+<section class="metric-grid">
+    <div class="metric-card revenue">
+        <h3>Total Revenue</h3>
+        <strong>
+            {{ selected_currency }}
+            {{ total_revenue|floatformat:2 }}
+        </strong>
+    </div>
+
+    <div class="metric-card">
+        <h3>Total Orders</h3>
+        <strong>{{ total_orders }}</strong>
+    </div>
+
+    <div class="metric-card">
+        <h3>Total Products</h3>
+        <strong>{{ total_products }}</strong>
+    </div>
+
+    <div class="metric-card purple">
+        <h3>Active Subscriptions</h3>
+        <strong>{{ active_subscriptions }}</strong>
+    </div>
+
+    <div class="metric-card warning">
+        <h3>Customers</h3>
+        <strong>{{ total_customers }}</strong>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="dashboard-card">
+        <h2>Revenue Over Time</h2>
+        <canvas id="revenueChart"></canvas>
+    </div>
+
+    <div class="dashboard-card">
+        <h2>Top Products</h2>
+        <canvas id="productChart"></canvas>
+    </div>
+</section>
+
+
+<section class="chart-grid equal-grid">
+    <div class="dashboard-card bundle-card">
+        <h2>Popular Subscription Bundles</h2>
+
+        <div class="bundle-chart-container">
+            <canvas id="bundleChart"></canvas>
+        </div>
+    </div>
+    <div class="alert-box">
+        <h2>Inventory Attention Required</h2>
+
+        {% if low_stock_products %}
+        <p>These products may need restocking soon</p>
+
+        <ul>
+            {% for product in low_stock_products|slice:":5" %}
+            <li>
+                <strong>{{ product.name }}</strong>
+                :
+                {{ product.stock_level }} units remaining
+
+                {% if product.stock_level == 0 %}
+                <span class="status-out">Out of Stock</span>
+                {% else %}
+                <span class="status-low">Low in Stock</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No products currently require attention.</p>
+        {% endif %}
+    </div>
+
+
+
+</section>
+
+{{ monthly_revenue_data|json_script:"monthly-revenue-data" }}
+{{ top_products|json_script:"top-products-data" }}
+{{ popular_bundles|json_script:"popular-bundles-data" }}
+<script>
+    const monthlyRevenue = JSON.parse(
+        document.getElementById("monthly-revenue-data").textContent
+    );
+
+    const revenueLabels = monthlyRevenue.map(
+        item => item.month
+    );
+
+    const revenueValues = monthlyRevenue.map(
+        item => Number(item.revenue)
+    );
+
+    const revenueCanvas = document.getElementById("revenueChart");
+
+    if (revenueCanvas && typeof Chart !== "undefined") {
+        new Chart(revenueCanvas, {
+            type: "line",
+            data: {
+                labels: revenueLabels,
+                datasets: [{
+                    label: "{{ selected_currency }} Revenue",
+                    data: revenueValues,
+                    borderColor: "#16a34a",
+                    backgroundColor: "rgba(22, 163, 74, 0.15)",
+                    fill: true,
+                    tension: 0.35
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+<script>
+    const topProducts = JSON.parse(
+        document.getElementById("top-products-data").textContent
+    );
+
+    const productCanvas = document.getElementById("productChart");
+
+    if (productCanvas && topProducts.length > 0) {
+        new Chart(productCanvas, {
+            type: "bar",
+            data: {
+                labels: topProducts.map(
+                    item => item["product__name"]
+                ),
+                datasets: [{
+                    label: "Units Sold",
+                    data: topProducts.map(
+                        item => Number(item.total_quantity)
+                    ),
+                    backgroundColor: "#2563eb"
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+<script>
+    const popularBundles = JSON.parse(
+        document.getElementById("popular-bundles-data").textContent
+    );
+
+    const bundleCanvas = document.getElementById("bundleChart");
+
+    if (bundleCanvas && popularBundles.length > 0) {
+        new Chart(bundleCanvas, {
+            type: "bar",
+            data: {
+                labels: popularBundles.map(
+                    item => item["bundle__name"]
+                ),
+                datasets: [{
+                    label: "Active Subscribers",
+                    data: popularBundles.map(
+                        item => Number(item.active_subscriptions)
+                    ),
+                    backgroundColor: [
+                        "#2563eb",
+                        "#16a34a",
+                        "#f97316",
+                        "#7c3aed",
+                        "#dc2626"
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+{% endblock %}

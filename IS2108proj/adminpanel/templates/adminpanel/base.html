@@ -19,124 +19,110 @@
             padding: 24px;
         }
 
-        .topbar {
+        .admin-header {
+            background: #bea989;
+            color: white;
+            padding: 18px 22px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        .brand-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 20px;
-            padding: 16px 0;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 24px;
-        }
-
-        .topbar nav {
-            display: flex;
-            gap: 16px;
             flex-wrap: wrap;
         }
 
-        .topbar a {
-            text-decoration: none;
-            color: #1d4ed8;
-            font-weight: 600;
-        }
-
-        .page-title {
+        .brand-title {
             margin: 0;
+            font-size: 24px;
         }
 
-        form {
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .main-nav {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 20px;
+            gap: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            margin-top: 16px;
+            padding-top: 14px;
         }
 
-        input,
-        select,
-        button {
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        button {
-            background: #1d4ed8;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            margin-top: 12px;
-        }
-
-        th,
-        td {
-            padding: 10px 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background: #f2f2f2;
-        }
-
-        .status-visible {
-            color: green;
-            font-weight: bold;
-        }
-
-        .status-hidden {
-            color: red;
-            font-weight: bold;
-        }
-
-        .page-actions {
-            margin-top: 18px;
-        }
-
-        a {
-            color: #1d4ed8;
+        .nav-link {
+            color: #e5eef7;
             text-decoration: none;
+            padding: 9px 13px;
+            border-radius: 7px;
+            font-weight: 600;
+            transition: background 0.2s ease;
         }
 
-        a:hover {
-            text-decoration: underline;
+        .nav-link:hover,
+        .nav-link.active {
+            background: white;
+            color: #17324d;
+            text-decoration: none;
         }
 
         .currency-form {
             display: flex;
-            gap: 6px;
             align-items: center;
+            gap: 6px;
             margin: 0;
+            color: white;
         }
 
-        .currency-form label {
-            font-weight: 600;
+        .currency-form select {
+            padding: 7px;
         }
 
         .logout-form {
-            display: inline;
             margin: 0;
         }
 
         .logout-button {
             background: transparent;
-            color: #1d4ed8;
-            border: none;
-            padding: 0;
-            font-weight: 600;
-            cursor: pointer;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            padding: 8px 12px;
+            border-radius: 6px;
         }
 
         .logout-button:hover {
-            text-decoration: underline;
+            background: white;
+            color: #17324d;
+        }
+
+        @media (max-width: 700px) {
+            .main-nav {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-link {
+                text-align: center;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .content-panel {
+                background: white;
+                border: 1px solid #d6dce3;
+                border-radius: 12px;
+                padding: 24px;
+                box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+            }
         }
     </style>
     {% block extra_head %}{% endblock %}
@@ -144,36 +130,87 @@
 
 <body>
     <div class="container">
-        <header class="topbar">
-            <h1 class="page-title">BrewMatch Admin</h1>
-            <nav>
-                <a href="{% url 'adminpanel:product_list' %}">Products</a>
-                <a href="{% url 'adminpanel:inventory_list' %}">Inventory</a>
-                <a href="{% url 'adminpanel:order_list' %}">Orders</a>
-                <a href="{% url 'adminpanel:customer_list' %}">Customers</a>
-                <a href="{% url 'adminpanel:subscription_bundle_list' %}">Subscriptions</a>
-                <a href="{% url 'adminpanel:review_list' %}">Reviews</a>
-                {% if request.user.is_authenticated %}
-                <form method="post" action="{% url 'adminpanel:admin_logout' %}" class="logout-form">
-                    {% csrf_token %}
-                    <button type="submit" class="logout-button">
-                        Sign out
-                    </button>
-                </form>
-                {% endif %}
-            </nav>
+        <header class="admin-header">
+            <div class="brand-row">
+                <h1 class="brand-title">BrewMatch Admin </h1>
 
-            <form method="get" class="currency-form">
-                <label for="currency">Currency:</label>
-                <select name="currency" id="currency">
-                    <option value="SGD" {% if selected_currency == "SGD" %}selected{% endif %}>SGD</option>
-                    <option value="USD" {% if selected_currency == "USD" %}selected{% endif %}>USD</option>
-                    <option value="EUR" {% if selected_currency == "EUR" %}selected{% endif %}>EUR</option>
-                </select>
-            </form>
+                <div class="header-actions">
+                    <form method="get" class="currency-form">
+                        <label for="currency">Currency:</label>
+
+                        <select name="currency" id="currency">
+                            <option value="SGD" {% if selected_currency == "SGD" %}selected{% endif %}>
+                                SGD
+                            </option>
+                            <option value="USD" {% if selected_currency == "USD" %}selected{% endif %}>
+                                USD
+                            </option>
+                            <option value="EUR" {% if selected_currency == "EUR" %}selected{% endif %}>
+                                EUR
+                            </option>
+                        </select>
+                    </form>
+
+                    {% if request.user.is_authenticated %}
+                    <form method="post" action="{% url 'adminpanel:admin_logout' %}" class="logout-form">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-button">
+                            Sign out
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <nav class="main-nav" aria-label="Admin navigation">
+                <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+                    href="{% url 'adminpanel:admin_dashboard' %}">
+                    Dashboard
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'product_list' %}active{% endif %}"
+                    href="{% url 'adminpanel:product_list' %}">
+                    Products
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'inventory_list' %}active{% endif %}"
+                    href="{% url 'adminpanel:inventory_list' %}">
+                    Inventory
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'order_list' %}active{% endif %}"
+                    href="{% url 'adminpanel:order_list' %}">
+                    Orders
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'customer_list' %}active{% endif %}"
+                    href="{% url 'adminpanel:customer_list' %}">
+                    Customers
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'subscription_bundle_list' %}active{% endif %}"
+                    href="{% url 'adminpanel:subscription_bundle_list' %}">
+                    Bundles
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'customer_subscription_list' %}active{% endif %}"
+                    href="{% url 'adminpanel:customer_subscription_list' %}">
+                    Customer Subscriptions
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'review_list' %}active{% endif %}"
+                    href="{% url 'adminpanel:review_list' %}">
+                    Reviews
+                </a>
+
+                <a class="nav-link {% if request.resolver_match.url_name == 'predictions' %}active{% endif %}"
+                    href="{% url 'adminpanel:predictions' %}">
+                    Predictions
+                </a>
+            </nav>
         </header>
 
-        <main>
+        <main class="content-panel">
             {% block content %}{% endblock %}
         </main>
     </div>
