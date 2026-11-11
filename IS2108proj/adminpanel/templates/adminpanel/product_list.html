@@ -8,7 +8,13 @@
 <style>
     table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #d6dce3;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+        margin-top: 12px;
     }
 
     th,
@@ -33,7 +39,7 @@
     }
 </style>
 <form method="get">
-     <input type="hidden" name="currency" value="{{ selected_currency }}">
+    <input type="hidden" name="currency" value="{{ selected_currency }}">
     <input type="text" name="search" placeholder="Search by product name" value="{{ search_query }}">
 
     <select name="category">
@@ -50,12 +56,9 @@
         <option value="">All roast levels</option>
 
         {% for value, label in roast_levels %}
-            <option
-                value="{{ value }}"
-                {% if roast_filter == value %}selected{% endif %}
-            >
-                {{ label }}
-            </option>
+        <option value="{{ value }}" {% if roast_filter == value %}selected{% endif %}>
+            {{ label }}
+        </option>
         {% endfor %}
     </select>
 
@@ -63,12 +66,9 @@
         <option value="">All caffeine types</option>
 
         {% for value, label in caffeine_types %}
-            <option
-                value="{{ value }}"
-                {% if caffeine_filter == value %}selected{% endif %}
-            >
-                {{ label }}
-            </option>
+        <option value="{{ value }}" {% if caffeine_filter == value %}selected{% endif %}>
+            {{ label }}
+        </option>
         {% endfor %}
     </select>
 
@@ -98,7 +98,7 @@
         <tr>
             <td>{{ product.id }}</td>
             <td>{{ product.name }}</td>
-            <td>{{ product.category.name }}</td>
+            <td>{{ product.category.get_name_display}}</td>
             <td>{{ product.get_roast_level_display }}</td>
             <td>{{ product.get_caffeine_type_display }}</td>
             <td>{{ selected_currency }} {{ product.display_price|floatformat:2 }}</td>
@@ -109,7 +109,8 @@
                 {% endif %}
             </td>
             <td>
-                <a href="{% url 'adminpanel:product_update' product.id %}?currency={{ selected_currency }}">View / Edit</a>
+                <a href="{% url 'adminpanel:product_update' product.id %}?currency={{ selected_currency }}">View /
+                    Edit</a>
             </td>
         </tr>
         {% empty %}
@@ -119,6 +120,8 @@
         {% endfor %}
     </tbody>
 </table>
+
+{% include "includes/pagination.html" %}
 
 <div class="page-actions">
     <a href="{% url 'adminpanel:product_add' %}?currency={{ selected_currency }}">Add New Product</a>

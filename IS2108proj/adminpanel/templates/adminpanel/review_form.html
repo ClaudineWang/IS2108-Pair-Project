@@ -4,6 +4,13 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
+<style>
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 22px;
+    }
+</style>
 <p>
     <strong>Product Name:</strong>
     {{ review.product.name }}
@@ -40,7 +47,34 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
+    <div class="form-actions">
     <button type="submit">{{ submit_button_text }}</button>
-    <a href="{% url 'adminpanel:review_list' %}">Cancel</a>
+    <button
+                    type="button"
+                    class="cancel-button"
+                    data-cancel-url="{% url 'adminpanel:product_list' %}?currency={{ selected_currency }}"
+                >
+                    Cancel
+                </button>
+            </div>
+
 </form>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cancelButton = document.querySelector("[data-cancel-url]");
+        if (cancelButton) {
+            cancelButton.addEventListener("click", function () {
+                sessionStorage.removeItem("admin_form_draft");
+                window.location.href = this.dataset.cancelUrl;
+            });
+        }
+
+        const form = document.querySelector("form");
+        if (form) {
+            form.addEventListener("submit", function () {
+                sessionStorage.removeItem("admin_form_draft");
+            });
+        }
+    });
+</script>
 {% endblock %}
