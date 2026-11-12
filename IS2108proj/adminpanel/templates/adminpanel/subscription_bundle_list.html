@@ -6,10 +6,16 @@
 {% block content %}
 <h1>Subscription Bundles</h1>
 <style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+   table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #d6dce3;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    margin-top: 12px;
+}
 
     th,
     td {
@@ -105,6 +111,8 @@
         {% endfor %}
     </tbody>
 </table>
+
+{% include "includes/pagination.html" %}
 
 <div style="margin-top: 20px;">
     <a href="{% url 'adminpanel:subscription_bundle_add' %}?currency={{ selected_currency }}">Add New Subscription Bundle</a>

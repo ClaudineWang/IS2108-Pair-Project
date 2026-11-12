@@ -1,4 +1,5 @@
 from email.mime import image
+from django.db.models import Q, F
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -25,7 +26,7 @@ class Category(models.Model):
     description = models.TextField(blank=True)
 
     def __str__(self):
-        return self.get_name_display() 
+        return self.get_name_display()
 
 class Product(models.Model):
     CAFFEINE_TYPE = [
@@ -87,13 +88,25 @@ class CustomerSubscription(models.Model):
         ('active', 'Active'),
         ('paused', 'Paused'),
         ('cancelled', 'Cancelled'),
-        ('expired', 'Expired'),
+        ('expired', 'Expired')
+
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='subscriptions')
     bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name='customer_subscriptions')
     start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True)
     next_delivery_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    class Meta:
+        constraints = [
+        models.CheckConstraint(
+            condition=(
+                Q(end_date__isnull=True) |
+                Q(end_date__gte=F("start_date"))
+            ),
+            name="end_date_after_start_date",
+        ),
+    ]
 
     def __str__(self):
         return f"{self.customer.user.username} - {self.bundle.name} ({self.status})"
@@ -117,6 +130,7 @@ class Order(models.Model):
     delivery_address = models.TextField()
     delivery_status = models.CharField(max_length=20, choices=DELIVERY_STATUS, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     def __str__(self):

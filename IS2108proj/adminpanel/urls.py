@@ -21,4 +21,6 @@ urlpatterns = [
     path('reviews/<int:review_id>/update/', views.review_update, name='review_update'),
     path('customer-subscriptions/', views.customer_subscription_list, name='customer_subscription_list'),
     path('customer-subscriptions/<int:subscription_id>/view/', views.customer_subscription_view, name='customer_subscription_view'),
+    path('', views.admin_dashboard, name='admin_dashboard'),
+    path('predictions/', views.predictions, name='predictions'),
 ]

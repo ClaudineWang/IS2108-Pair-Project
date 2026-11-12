@@ -1,17 +1,38 @@
 from decimal import Decimal
-from django.shortcuts import redirect, render
+
 from django.contrib.auth import login, logout
-from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet, ReviewForm, AdminLoginForm
-from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription
 from django.db import models, transaction
-from django.db.models import Q, Count
-from django.db.models.functions import Coalesce
-from core.services import advance_subscription_delivery
-from core.currency import RATES as CURRENCY_RATES, get_selected_currency
+from django.db.models import Count, F, Q, Sum
+from django.db.models.functions import Coalesce, TruncMonth
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
-from adminpanel.decorators import staff_required
 
-
+from adminpanel.forms import (
+    AdminLoginForm,
+    BundleItemForm,
+    BundleItemFormSet,
+    InventoryForm,
+    OrderForm,
+    ProductForm,
+    ReviewForm,
+    SubscriptionBundleForm,
+)
+from core.currency import RATES as CURRENCY_RATES, get_selected_currency
+from core.forecasting import get_restock_predictions
+from core.models import (
+    BundleItem,
+    Category,
+    CustomerProfile,
+    CustomerSubscription,
+    Order,
+    OrderItem,
+    Product,
+    Review,
+    SubscriptionBundle,
+)
+from core.pagination import paginate_queryset
+from core.services import advance_subscription_delivery
+from .decorators import staff_required
 @staff_required
 def product_list(request):
     products = Product.objects.all().order_by('id')
@@ -36,11 +57,15 @@ def product_list(request):
     if roast_filter:
         products = products.filter(roast_level=roast_filter)
 
-    for product in products:
+    page_obj, query_string = paginate_queryset(request, products, per_page=10)
+
+    for product in page_obj:
         product.display_price = product.price * CURRENCY_RATES[selected_currency]
 
     context = {
-        'products': products,
+        'products': page_obj,
+        'page_obj': page_obj,
+        'query_string': query_string,
         'categories': categories,
         'search_query': search_query,
         'roast_levels': Product.ROAST_LEVEL,
@@ -51,7 +76,6 @@ def product_list(request):
     }
 
     return render(request, 'adminpanel/product_list.html', context)
-
 
 
 @staff_required
@@ -106,6 +130,7 @@ def product_update(request, product_id):
 
         form = ProductForm(
             request.POST,
+            request.FILES,
             instance=product,
             currency=selected_currency
         )
@@ -165,10 +190,13 @@ def inventory_list(request):
         products = products.filter(
             stock_level__gt=models.F("reorder_threshold")
         )
+    page_obj, query_string = paginate_queryset(request, products, per_page=10)
 
 
     context= {
-            'products': products,
+            'products': page_obj,
+            'page_obj': page_obj,
+            'query_string': query_string,
             'categories': categories,
             'search_query': search_query,
             'stock_status_filter': stock_status_filter,
@@ -231,11 +259,14 @@ def order_list(request):
         orders = orders.filter(
             delivery_status=delivery_status_filter
         )
-    for order in orders:
+    page_obj, query_string = paginate_queryset(request, orders, per_page=20)
+    for order in page_obj:
         order.display_grand_total = order.grand_total * CURRENCY_RATES[selected_currency]
 
     context = {
-        'orders': orders,
+        'orders': page_obj,
+        'page_obj': page_obj,
+        'query_string': query_string,
         'delivery_statuses': delivery_statuses,
         'search_query': search_query,
         'date_filter': date_filter,
@@ -335,14 +366,17 @@ def customer_list(request):
         if search_query.isdigit():
             search_filter |= Q(id=int(search_query))
         customers = customers.filter(search_filter)
+    page_obj, query_string = paginate_queryset(request, customers, per_page=20)
 
-    for customer in customers:
+    for customer in page_obj:
         customer.display_total_spending = (
             customer.total_spending or Decimal("0")
         ) * CURRENCY_RATES[selected_currency]
 
     context = {
-        "customers": customers,
+        "customers": page_obj,
+        'page_obj': page_obj,
+        'quer_string': query_string,
         "search_query": search_query,
         "selected_currency": selected_currency,
         "page_title": "Customer List",
@@ -379,7 +413,6 @@ def customer_view (request, customer_id):
         'currency': selected_currency,
     }
     return render(request, 'adminpanel/customer_view.html', context)
-
 @staff_required
 def subscription_bundle_list(request):
     selected_currency = get_selected_currency(request)
@@ -405,10 +438,14 @@ def subscription_bundle_list(request):
         subscription_bundles = subscription_bundles.filter(is_active = True)
     elif is_active_filter == 'false':
         subscription_bundles = subscription_bundles.filter(is_active = False)
-    for bundle in subscription_bundles:
+
+    page_obj, query_string = paginate_queryset(request, subscription_bundles, per_page=20)
+    for bundle in page_obj:
         bundle.display_price = bundle.price_per_delivery * CURRENCY_RATES[selected_currency]
     context= {
-        'subscription_bundles': subscription_bundles,
+        'subscription_bundles': page_obj,
+        'page_obj': page_obj,
+        'query_string': query_string,
         'billing_frequencies': billing_frequencies,
         'search_query': search_query,
         'billing_frequency_filter': billing_frequency_filter,
@@ -469,7 +506,6 @@ def subscription_bundle_update(request, subscription_bundle_id):
         'currency': selected_currency,
     }
     return render(request, "adminpanel/subscription_bundle_form.html", context)
-
 
 @staff_required
 def subscription_bundle_add(request):
@@ -541,8 +577,11 @@ def review_list(request):
         reviews = reviews.filter(
             is_visible=is_visible_filter
         )
+    page_obj, query_string = paginate_queryset(request, reviews, per_page=10)
     context = {
-        'reviews': reviews,
+        'reviews': page_obj,
+        'page_obj': page_obj,
+        'query_string': query_string,
         'rating_choices': Review.RATING_CHOICES,
         'search_query': search_query,
         'rating_filter': rating_filter,
@@ -589,9 +628,12 @@ def customer_subscription_list(request):
         subscriptions = subscriptions.filter(
             status = status_filter
         )
+    page_obj, query_string = paginate_queryset(request, subscriptions, per_page=20)
 
     context = {
-        'subscriptions': subscriptions,
+        'subscriptions': page_obj,
+        'page_obj': page_obj,
+        'query_string': query_string,
         'status_choices': CustomerSubscription.STATUS_CHOICES,
         'search_query': search_query,
         'status_filter': status_filter,
@@ -635,7 +677,7 @@ def admin_login(request):
         if form.is_valid():
             user = form.cleaned_data["user"]
             login(request, user)
-            return redirect("adminpanel:product_list")
+            return redirect("adminpanel:admin_dashboard")
     else:
         form = AdminLoginForm()
 
@@ -648,4 +690,101 @@ def admin_login(request):
 @staff_required
 def admin_logout(request):
     logout(request)
-    return redirect("adminpanel:admin_login")
+    return redirect("adminpanel:admin_dashboard")
+
+@staff_required
+def admin_dashboard(request):
+    selected_currency = get_selected_currency(request)
+    conversion_rate = CURRENCY_RATES.get(selected_currency, 1.0)
+    money_field = models.DecimalField(max_digits=12, decimal_places=2)
+    def convert_money(value):
+        value = value or Decimal("0.00")
+        return (value * Decimal(conversion_rate)).quantize(Decimal("0.01"))
+    valid_orders = Order.objects.filter(delivery_status__in=["pending", "roasting", "shipped", "delivered"])
+    total_orders = valid_orders.aggregate(revenue=Coalesce(Sum("grand_total"), Decimal("0.00"), output_field=money_field),
+                                          product_sales=Coalesce(Sum("items__price_at_purchase"), Decimal("0.00"), output_field=money_field),
+                                          delivery_fees=Coalesce(Sum("delivery_fee"), Decimal("0.00"), output_field=money_field))
+    total_products = Product.objects.count()
+    low_stock_products = Product.objects.filter(stock_level__lte=F("reorder_threshold")).order_by("stock_level")
+    out_of_stock_products = Product.objects.filter(stock_level=0).order_by("name")
+    top_products = list( OrderItem.objects.exclude(order__delivery_status="cancelled")
+        .values("product__id", "product__name")
+        .annotate(total_quantity=Sum("quantity"))
+        .order_by("-total_quantity")[:5]
+    )
+    popular_bundles = list( CustomerSubscription.objects.filter(status="active").values("bundle__id", "bundle__name")
+        .annotate(active_subscriptions=Count("id"))
+        .order_by("-active_subscriptions")[:5]
+    )
+    recent_orders = valid_orders.select_related("customer__user").prefetch_related("items__product").order_by("-created_at")[:5]
+    for order in recent_orders:
+        order.display_grand_total = convert_money(order.grand_total)
+    monthly_revenue = ( valid_orders.annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(monthly_revenue=Coalesce(Sum("grand_total"), Decimal("0.00"), output_field=money_field))
+        .order_by("month")
+    )
+    monthly_revenue_data = []
+    for entry in monthly_revenue:
+        month = entry["month"].strftime("%B %Y")
+        revenue = convert_money(entry["monthly_revenue"])
+        monthly_revenue_data.append({"month": month, "revenue": revenue})
+    context = {
+        'selected_currency': selected_currency,
+        'currency': selected_currency,
+        'total_products': total_products,
+        'low_stock_products': low_stock_products,
+        'out_of_stock_products': out_of_stock_products,
+        'top_products': top_products,
+        'total_orders': valid_orders.count(),
+        'popular_bundles': popular_bundles,
+        'recent_orders': recent_orders,
+        'delivery_fees': convert_money(total_orders["delivery_fees"]),
+        'product_sales': convert_money(total_orders["product_sales"]),
+        'total_revenue': convert_money(total_orders["revenue"]),
+        'monthly_revenue_data': monthly_revenue_data,
+        'total_customers': CustomerProfile.objects.count(),
+        'active_subscriptions': CustomerSubscription.objects.filter(status="active").count(),
+    }
+    return render(request, "adminpanel/admin_dashboard.html", context)
+
+#ML model prediction view
+@staff_required
+def predictions(request):
+    selected_currency = get_selected_currency(request)
+    if selected_currency not in CURRENCY_RATES:
+        selected_currency = "SGD"
+
+    predictions = get_restock_predictions()
+    def urgency_rank(prediction):
+        if prediction["stock_status"] == "Out of Stock":
+            return 0
+
+        if prediction["suggested_restock"] > 0:
+            return 1
+
+        if prediction["stock_status"] == "Low in Stock":
+            return 2
+
+        return 3
+    predictions.sort(key=lambda prediction: (
+            urgency_rank(prediction),
+            -prediction["suggested_restock"],
+            -prediction["predicted_demand"],
+            prediction["product_name"].lower(),
+        )
+    )
+    page_obj, query_string = paginate_queryset(
+        request,
+        predictions,
+        per_page=10
+    )
+
+    context = {
+        "predictions": page_obj,
+        'page_obj': page_obj,
+        'query_string': query_string,
+        "selected_currency": selected_currency,
+        "currency": selected_currency,
+    }
+    return render(request, "adminpanel/predictions.html", context)
