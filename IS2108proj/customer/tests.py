@@ -60,6 +60,14 @@ class CustomerHomeTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("customer:customer_login"), response.url)
 
+    def test_customer_logout_redirects_to_login(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse("logout"))
+
+        self.assertRedirects(response, reverse("customer:customer_login"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
     def test_customer_home_shows_dashboard_content(self):
         self.client.force_login(self.user)
 
