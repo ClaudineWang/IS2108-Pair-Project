@@ -92,6 +92,7 @@ def customer_questionnaire(request):
                     if latest_response.preferred_category
                     else ""
                 ),
+                "preferred_roast": latest_response.preferred_roast,
                 "preferred_flavour": latest_response.preferred_flavour,
                 "preferred_brewing_method": latest_response.preferred_brewing_method,
                 "preferred_caffeine_type": latest_response.preferred_caffeine_type,
@@ -134,6 +135,11 @@ def customer_recommendations(request):
         score = 0
         if predicted_roast and product.roast_level == predicted_roast:
             score += 3
+        if (
+            latest_response.preferred_roast
+            and product.roast_level == latest_response.preferred_roast
+        ):
+            score += 2
         if product.caffeine_type == latest_response.preferred_caffeine_type:
             score += 3
         if recommendation_category and product.category_id == recommendation_category.id:
@@ -151,6 +157,13 @@ def customer_recommendations(request):
         if predicted_roast and product.roast_level == predicted_roast:
             reasons.append(
                 f"Matches the model-predicted {product.get_roast_level_display().lower()} roast."
+            )
+        if (
+            latest_response.preferred_roast
+            and product.roast_level == latest_response.preferred_roast
+        ):
+            reasons.append(
+                f"Matches your preferred {product.get_roast_level_display().lower()} roast."
             )
         if product.caffeine_type == latest_response.preferred_caffeine_type:
             reasons.append(
@@ -213,6 +226,7 @@ def customer_home(request):
         recommended_products.sort(
             key=lambda product: (
                 product.roast_level == predicted_roast,
+                product.roast_level == latest_response.preferred_roast,
                 product.caffeine_type == latest_response.preferred_caffeine_type,
                 product.created_at,
             ),

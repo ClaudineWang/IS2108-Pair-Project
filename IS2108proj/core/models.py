@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from email.mime import image
 from django.db.models import Q, F
 
@@ -16,10 +18,10 @@ class CustomerProfile(models.Model):
 
 class Category(models.Model):
     CATEGORY_CHOICES = [
-        ('whole_bean', 'Whole Bean'),
-        ('ground', 'Ground'),
-        ('instant', 'Instant'),
-        ('drip_bag', 'Drip Bag'),
+        ('whole_bean', 'Whole Bean Coffee'),
+        ('ground', 'Ground Coffee'),
+        ('instant', 'Instant Coffee'),
+        ('drip_bag', 'Drip Bags'),
     ]
 
     name = models.CharField(max_length=100, choices=CATEGORY_CHOICES, unique=True)
@@ -92,7 +94,7 @@ class CustomerSubscription(models.Model):
 
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='subscriptions')
-    bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.CASCADE, related_name='customer_subscriptions')
+    bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.PROTECT, related_name='customer_subscriptions')
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField(null=True, blank=True)
     next_delivery_date = models.DateField(null=True, blank=True)
@@ -124,7 +126,7 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.PROTECT, related_name='orders')
-    subscription = models.ForeignKey(CustomerSubscription, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    subscription = models.ForeignKey(CustomerSubscription, on_delete=models.PROTECT, null=True, blank=True, related_name='orders')
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_address = models.TextField()
@@ -133,6 +135,29 @@ class Order(models.Model):
 
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(order_type="one-time", subscription__isnull=True)
+                    | Q(order_type="subscription", subscription__isnull=False)
+                ),
+                name="order_subscription_matches",
+            ),
+            models.CheckConstraint(
+                condition=Q(grand_total=F("total_amount") + F("delivery_fee")),
+                name="order_total_matches_parts",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.grand_total = Decimal(self.total_amount) + Decimal(self.delivery_fee)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"grand_total"}
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Order {self.id}"
 
@@ -141,6 +166,14 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(quantity__gte=1),
+                name="orderitem_qty_positive",
+            ),
+        ]
 
     @property
     def subtotal(self):
@@ -160,7 +193,11 @@ class BundleItem(models.Model):
             models.UniqueConstraint(
                 fields=["subscription_bundle", "product"],
                 name="unique_product_per_bundle"
-        )
+        ),
+        models.CheckConstraint(
+            condition=Q(quantity__gte=1),
+            name="bundleitem_qty_positive",
+        ),
     ]
     def __str__(self):
         return f"{self.product.name} in {self.subscription_bundle.name}"
@@ -210,7 +247,6 @@ class QuestionnaireResponse(models.Model):
     preferred_brewing_method = models.CharField(max_length=50, choices=BREWING_METHOD_CHOICES)
     preferred_caffeine_type = models.CharField(max_length=50, choices=CAFFEINE_TYPE_CHOICES)
     preferred_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="questionnaire_preferences")
-    predicted_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="questionnaire_predictions")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -230,6 +266,18 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cart", "product"],
+                name="one_product_per_cart",
+            ),
+            models.CheckConstraint(
+                condition=Q(quantity__gte=1),
+                name="cartitem_qty_positive",
+            ),
+        ]
 
     @property
     def subtotal(self):
@@ -251,12 +299,24 @@ class Review(models.Model):
         (5, "5 Stars"),
     ]
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='reviews')
     customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='reviews')
     rating = models.PositiveIntegerField(choices=RATING_CHOICES)
     comment = models.TextField()
     is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "customer"],
+                name="one_review_per_product_customer",
+            ),
+            models.CheckConstraint(
+                condition=Q(rating__gte=1, rating__lte=5),
+                name="review_rating_valid",
+            ),
+        ]
 
     def __str__(self):
         return f"Review ({self.rating}/5) by {self.customer.username} for {self.product.name}"
@@ -273,7 +333,7 @@ class SubscriptionBundleReview(models.Model):
 
     subscription_bundle = models.ForeignKey(
         SubscriptionBundle,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="reviews",
     )
     customer = models.ForeignKey(
@@ -291,7 +351,11 @@ class SubscriptionBundleReview(models.Model):
             models.UniqueConstraint(
                 fields=["subscription_bundle", "customer"],
                 name="unique_review_per_bundle_customer",
-            )
+            ),
+            models.CheckConstraint(
+                condition=Q(rating__gte=1, rating__lte=5),
+                name="bundle_review_rating_valid",
+            ),
         ]
 
     def __str__(self):

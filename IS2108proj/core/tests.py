@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -168,6 +169,44 @@ class CartPageTests(TestCase):
         self.assertRedirects(response, reverse("core:cart"))
         self.assertFalse(CartItem.objects.filter(pk=self.cart_item.pk).exists())
 
+    def test_cart_rejects_duplicate_product_rows(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                CartItem.objects.create(
+                    cart=self.cart,
+                    product=self.product,
+                    quantity=1,
+                )
+
+    def test_cart_rejects_zero_quantity(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                CartItem.objects.create(
+                    cart=self.cart,
+                    product=Product.objects.create(
+                        name="Second Coffee",
+                        price="12.00",
+                        category=self.category,
+                        caffeine_type="caffeinated",
+                        roast_level="medium",
+                        stock_level=5,
+                    ),
+                    quantity=0,
+                )
+
+    def test_order_calculates_grand_total_from_amount_and_delivery_fee(self):
+        profile = CustomerProfile.objects.create(user=self.user)
+        order = Order.objects.create(
+            customer=profile,
+            order_type="one-time",
+            total_amount="20.50",
+            delivery_fee="5.00",
+            delivery_address="1 Coffee Lane",
+        )
+        order.refresh_from_db()
+
+        self.assertEqual(order.grand_total, order.total_amount + order.delivery_fee)
+
 
 class ProductDetailTests(TestCase):
     def setUp(self):
@@ -204,7 +243,7 @@ class ProductDetailTests(TestCase):
         response = self.client.get(
             reverse("core:product_detail", args=[self.product.id])
         )
-        self.assertContains(response, "You can add a review after purchasing this product.")
+        self.assertContains(response, "You can add a review after this product has been delivered.")
 
         order = Order.objects.create(
             customer=self.profile,
@@ -255,6 +294,14 @@ class ProductDetailTests(TestCase):
                 comment="Excellent coffee.",
             ).exists()
         )
+        self.client.post(
+            reverse("core:product_detail", args=[self.product.id]),
+            {"rating": "4", "comment": "Another review."},
+        )
+        self.assertEqual(
+            Review.objects.filter(product=self.product, customer=self.profile).count(),
+            1,
+        )
 
     def test_cancelled_order_does_not_allow_review(self):
         order = Order.objects.create(
@@ -276,7 +323,29 @@ class ProductDetailTests(TestCase):
             reverse("core:product_detail", args=[self.product.id])
         )
 
-        self.assertContains(response, "You can add a review after purchasing this product.")
+        self.assertContains(response, "You can add a review after this product has been delivered.")
+
+    def test_undelivered_order_does_not_allow_review(self):
+        order = Order.objects.create(
+            customer=self.profile,
+            order_type="one-time",
+            total_amount=self.product.price,
+            delivery_address="1 Coffee Lane",
+            delivery_status="shipped",
+        )
+        OrderItem.objects.create(
+            order=order,
+            product=self.product,
+            quantity=1,
+            price_at_purchase=self.product.price,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("core:product_detail", args=[self.product.id])
+        )
+
+        self.assertContains(response, "You can add a review after this product has been delivered.")
 
 
 class ProductListTests(TestCase):

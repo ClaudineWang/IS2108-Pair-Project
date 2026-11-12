@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, get_object_or_404, redirect
+from django.db import transaction
 from django.db.models import Q
 from .forms import CheckoutForm, CustomerReviewForm
 from .models import (
@@ -115,19 +116,20 @@ def product_detail(request, product_id):
         cart, _ = Cart.objects.get_or_create(customer=request.user)
         cart_count = sum(item.quantity for item in cart.items.all())
 
-        has_purchased = OrderItem.objects.filter(
+        has_delivered_order = OrderItem.objects.filter(
             product=product,
             order__customer__user=request.user,
-        ).exclude(order__delivery_status='cancelled').exists()
+            order__delivery_status='delivered',
+        ).exists()
         has_reviewed = Review.objects.filter(
             product=product,
             customer__user=request.user,
         ).exists()
-        can_review = has_purchased and not has_reviewed
+        can_review = has_delivered_order and not has_reviewed
 
         if request.method == 'POST':
-            if not has_purchased:
-                messages.error(request, 'You can review this product after purchasing it.')
+            if not has_delivered_order:
+                messages.error(request, 'You can review this product after it has been delivered.')
                 return redirect('core:product_detail', product_id=product.id)
             if has_reviewed:
                 messages.info(request, 'You have already reviewed this product.')
@@ -138,11 +140,15 @@ def product_detail(request, product_id):
                 customer_profile, _ = CustomerProfile.objects.get_or_create(
                     user=request.user
                 )
-                review = review_form.save(commit=False)
-                review.product = product
-                review.customer = customer_profile
-                review.save()
-                messages.success(request, 'Thank you for reviewing this product.')
+                _, created = Review.objects.get_or_create(
+                    product=product,
+                    customer=customer_profile,
+                    defaults=review_form.cleaned_data,
+                )
+                if created:
+                    messages.success(request, 'Thank you for reviewing this product.')
+                else:
+                    messages.info(request, 'You have already reviewed this product.')
                 return redirect('core:product_detail', product_id=product.id)
 
     context = {
@@ -159,6 +165,7 @@ def product_detail(request, product_id):
 
 
 @login_required
+@transaction.atomic
 def add_to_cart(request, product_id):
     """Adds a product to the logged-in customer's cart."""
     product = get_object_or_404(Product, id=product_id, is_visible=True)
@@ -173,7 +180,7 @@ def add_to_cart(request, product_id):
         messages.error(request, 'Quantity must be at least 1.')
         return redirect('core:product_detail', product_id=product.id)
 
-    cart, _ = Cart.objects.get_or_create(customer=request.user)
+    cart, _ = Cart.objects.select_for_update().get_or_create(customer=request.user)
     cart_item = CartItem.objects.filter(cart=cart, product=product).first()
     current_quantity = cart_item.quantity if cart_item else 0
     requested_quantity = current_quantity + quantity

@@ -48,16 +48,19 @@ class QuestionnaireResponseForm(forms.ModelForm):
     class Meta:
         model = QuestionnaireResponse
         fields = [
+            "preferred_roast",
             "preferred_flavour",
             "preferred_brewing_method",
             "preferred_caffeine_type",
         ]
         labels = {
+            "preferred_roast": "Which roast level do you prefer?",
             "preferred_flavour": "Which flavor notes sound best to you?",
             "preferred_brewing_method": "How do you usually brew your coffee?",
             "preferred_caffeine_type": "How much caffeine would you like?",
         }
         widgets = {
+            "preferred_roast": forms.RadioSelect(),
             "preferred_flavour": forms.RadioSelect(),
             "preferred_brewing_method": forms.RadioSelect(),
             "preferred_caffeine_type": forms.RadioSelect(),
@@ -81,7 +84,7 @@ class QuestionnaireResponseForm(forms.ModelForm):
                 "preferred_caffeine_type",
             ]
         )
-        for field_name in ("preferred_flavour",):
+        for field_name in ("preferred_roast", "preferred_flavour"):
             model_field = QuestionnaireResponse._meta.get_field(field_name)
             self.fields[field_name].choices = model_field.choices
 

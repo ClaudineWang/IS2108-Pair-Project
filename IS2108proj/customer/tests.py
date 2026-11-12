@@ -51,7 +51,6 @@ class CustomerHomeTests(TestCase):
             preferred_brewing_method="espresso",
             preferred_caffeine_type="caffeinated",
             preferred_category=self.category,
-            predicted_category=self.category,
         )
         CustomerProfile.objects.create(user=self.user)
 
@@ -92,13 +91,14 @@ class CustomerHomeTests(TestCase):
             self.category.name,
         )
         self.assertContains(response, 'name="preferred_category"')
+        self.assertContains(response, 'name="preferred_roast"')
         self.assertContains(response, 'name="preferred_flavour"')
         self.assertContains(response, 'name="preferred_brewing_method"')
         self.assertContains(response, 'name="preferred_caffeine_type"')
-        self.assertContains(response, ">Whole Bean</span>")
-        self.assertContains(response, ">Ground</span>")
-        self.assertContains(response, ">Instant</span>")
-        self.assertContains(response, ">Drip Bag</span>")
+        self.assertContains(response, ">Whole Bean Coffee</span>")
+        self.assertContains(response, ">Ground Coffee</span>")
+        self.assertContains(response, ">Instant Coffee</span>")
+        self.assertContains(response, ">Drip Bags</span>")
         self.assertNotContains(response, 'name="preferred_category" value=""')
         self.assertNotContains(response, 'name="preferred_flavour" value=""')
         self.assertContains(response, ">Chocolatey</span>")
@@ -139,7 +139,7 @@ class CustomerHomeTests(TestCase):
         self.assertContains(response, "Showing 2 matching products")
         self.assertContains(response, "Why this coffee?")
         self.assertContains(response, "model-predicted medium roast")
-        self.assertContains(response, "selected Whole Bean format")
+        self.assertContains(response, "selected Whole Bean Coffee format")
         self.assertNotContains(response, "Ground Espresso")
         self.assertContains(response, "Retake the coffee quiz")
         self.assertContains(response, self.product.name)
@@ -162,6 +162,7 @@ class CustomerHomeTests(TestCase):
             reverse("customer:customer_questionnaire"),
             {
                 "preferred_category": self.category.name,
+                "preferred_roast": "light",
                 "preferred_flavour": "chocolatey",
                 "preferred_brewing_method": "espresso",
                 "preferred_caffeine_type": "caffeinated",
@@ -175,6 +176,7 @@ class CustomerHomeTests(TestCase):
             preferred_flavour="chocolatey",
         ).order_by("-pk").first()
         self.assertIsNotNone(saved_response)
+        self.assertEqual(saved_response.preferred_roast, "light")
         self.assertEqual(saved_response.predicted_roast, "dark")
 
     def test_quiz_prediction_saves_model_suggested_roast(self):

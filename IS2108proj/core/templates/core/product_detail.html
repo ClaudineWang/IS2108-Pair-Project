@@ -337,7 +337,7 @@
                     {% elif request.user.is_authenticated and has_reviewed %}
                         <p class="review-notice">You have already reviewed this product.</p>
                     {% elif request.user.is_authenticated %}
-                        <p class="review-notice">You can add a review after purchasing this product.</p>
+                        <p class="review-notice">You can add a review after this product has been delivered.</p>
                     {% else %}
                         <p class="review-notice"><a href="{% url 'customer:customer_login' %}">Log in</a> and purchase this product to leave a review.</p>
                     {% endif %}
