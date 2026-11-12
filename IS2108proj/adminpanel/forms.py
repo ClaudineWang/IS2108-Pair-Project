@@ -54,6 +54,19 @@ class OrderForm(forms.ModelForm):
         model = Order
         fields = ["delivery_status"]
 
+    def clean_delivery_status(self):
+        delivery_status = self.cleaned_data["delivery_status"]
+        if self.instance.delivery_status == "cancelled" and delivery_status != "cancelled":
+            raise forms.ValidationError("Cancelled orders cannot be reopened.")
+        if (
+            self.instance.delivery_status in {"shipped", "delivered"}
+            and delivery_status == "cancelled"
+        ):
+            raise forms.ValidationError(
+                "Shipped or delivered orders cannot be cancelled. Handle them through a return process."
+            )
+        return delivery_status
+
 class SubscriptionBundleForm(forms.ModelForm):
     class Meta:
         model = SubscriptionBundle

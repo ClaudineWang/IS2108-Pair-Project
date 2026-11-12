@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from core.models import CustomerProfile, QuestionnaireResponse, Category
+from core.models import Category, CustomerProfile, QuestionnaireResponse
 
 class CustomerSignupForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
@@ -38,23 +38,60 @@ class CustomerSignupForm(forms.ModelForm):
         return user
 
 class QuestionnaireResponseForm(forms.ModelForm):
+    preferred_category = forms.ChoiceField(
+        choices=Category.CATEGORY_CHOICES,
+        label="Which coffee format do you prefer?",
+        help_text="Choose whole bean, ground coffee, instant, or drip bags.",
+        widget=forms.RadioSelect(),
+    )
+
     class Meta:
         model = QuestionnaireResponse
-        fields = ["preferred_roast", "preferred_flavour", "preferred_brewing_method", "preferred_caffeine_type", "preferred_category"]
+        fields = [
+            "preferred_flavour",
+            "preferred_brewing_method",
+            "preferred_caffeine_type",
+        ]
         labels = {
-            "preferred_roast": "What Roast Level Do You Prefer?",
-            "preferred_flavour": "What Flavour Profile Do You Prefer?",
-            "preferred_brewing_method": "How Do You Usually Brew Your Coffee?",
-            "preferred_caffeine_type": "Do You Prefer Caffeinated or Decaf Coffee?",
-            "preferred_category": "What Type of Coffee Do You Prefer?",
+            "preferred_flavour": "Which flavor notes sound best to you?",
+            "preferred_brewing_method": "How do you usually brew your coffee?",
+            "preferred_caffeine_type": "How much caffeine would you like?",
         }
         widgets = {
-            "preferred_roast": forms.Select(),
-            "preferred_flavour": forms.Select(),
-            "preferred_brewing_method": forms.Select(),
-            "preferred_caffeine_type": forms.Select(),
-            "preferred_category": forms.Select(),
+            "preferred_flavour": forms.RadioSelect(),
+            "preferred_brewing_method": forms.RadioSelect(),
+            "preferred_caffeine_type": forms.RadioSelect(),
         }
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.fields['preferred_category'].queryset = Category.objects.all().order_by('name')
+        help_texts = {
+            "preferred_flavour": "Pick the flavor profile you are most drawn to.",
+            "preferred_brewing_method": "Choose the brewing method you use most often.",
+            "preferred_caffeine_type": "Choose regular coffee or a decaf option.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["preferred_category"].required = True
+        if self.instance and self.instance.preferred_category_id:
+            self.initial["preferred_category"] = self.instance.preferred_category.name
+        self.order_fields(
+            [
+                "preferred_category",
+                "preferred_flavour",
+                "preferred_brewing_method",
+                "preferred_caffeine_type",
+            ]
+        )
+        for field_name in ("preferred_flavour",):
+            model_field = QuestionnaireResponse._meta.get_field(field_name)
+            self.fields[field_name].choices = model_field.choices
+
+        self.fields["preferred_brewing_method"].choices = [
+            ("espresso", "Espresso / Moka"),
+            ("french_press", "French Press"),
+            ("pour_over", "Pour-over / V60"),
+            ("filter", "Drip / Filter"),
+        ]
+        self.fields["preferred_caffeine_type"].choices = [
+            ("caffeinated", "Regular (caffeinated)"),
+            ("decaf", "Decaf"),
+        ]

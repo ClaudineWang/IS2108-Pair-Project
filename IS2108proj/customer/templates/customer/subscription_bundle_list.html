@@ -1,0 +1,75 @@
+{% extends "customer/base_customer.html" %}
+{% block title %}Coffee Subscriptions | BrewMatch{% endblock %}
+{% block extra_head %}
+    <style>
+        :root { --ink:#282520; --muted:#716b62; --line:#ded8ce; --paper:#fffefa; --cream:#f7f3eb; --coffee:#70452f; --dark:#4b3023; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--paper); color:var(--ink); font-family:Arial,sans-serif; }
+        a { color:inherit; }
+        header { display:flex; min-height:82px; align-items:center; justify-content:space-between; gap:16px; padding:14px clamp(20px,4vw,64px); border-bottom:1px solid var(--line); }
+        .brand { color:var(--dark); font-size:2rem; line-height:1; font-weight:700; text-decoration:none; }
+        .brand-name { font-size:1rem; }
+        .top-actions,.top-actions form { display:flex; align-items:center; gap:12px; margin:0; }
+        .pill-link,.logout-button { display:inline-flex; min-height:42px; align-items:center; justify-content:center; padding:8px 18px; border:1px solid var(--ink); border-radius:999px; background:transparent; color:var(--ink); font:inherit; text-decoration:none; }
+        .pill-link:hover,.logout-button:hover { background:var(--cream); }
+        .logout-button { cursor:pointer; }
+        .layout { display:grid; min-height:calc(100vh - 82px); grid-template-columns:250px minmax(0,1fr); }
+        .sidebar { padding:30px 20px; border-right:1px solid var(--line); background:#f8f5ef; }
+        .side-nav { position:sticky; top:24px; display:grid; gap:7px; }
+        .side-nav a { padding:13px 16px; border-radius:9px; color:var(--muted); text-decoration:none; }
+        .side-nav a:hover,.side-nav a.active { background:#e7d4be; color:var(--dark); }
+        main { width:min(100%,1380px); min-width:0; margin:auto; padding:clamp(20px,3vw,42px); }
+        h1 { margin:0 0 8px; font-size:clamp(1.8rem,4vw,2.5rem); }
+        .intro { margin:0 0 28px; color:var(--muted); line-height:1.5; }
+        .bundle-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
+        .bundle-card { overflow:hidden; border:1px solid var(--line); border-radius:16px; background:white; text-decoration:none; transition:transform .15s ease,border-color .15s ease; }
+        .bundle-card:hover { transform:translateY(-2px); border-color:var(--coffee); }
+        .bundle-image,.placeholder { display:grid; width:100%; height:210px; place-items:center; background:var(--cream); color:#94785f; font-size:3rem; object-fit:cover; }
+        .bundle-content { padding:18px; }
+        h2 { margin:0 0 8px; font-size:1.2rem; }
+        p { color:var(--muted); line-height:1.5; }
+        .price { color:var(--dark); font-weight:700; }
+        .empty { padding:20px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); }
+        @media(max-width:720px) {
+            header { padding:12px 16px; }
+            .brand-name { display:none; }
+            .layout { grid-template-columns:1fr; }
+            .sidebar { padding:10px 12px; border-right:0; border-bottom:1px solid var(--line); }
+            .side-nav { position:static; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
+            .side-nav a { padding:10px 6px; text-align:center; font-size:.85rem; }
+            main { padding:20px 16px 36px; }
+        }
+        @media(max-width:520px) { header { gap:8px; } .top-actions { gap:6px; } .pill-link,.logout-button { min-height:38px; padding:7px 12px; font-size:.9rem; } .side-nav { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    </style>
+{% endblock %}
+{% block content %}
+        <h1>Coffee Subscriptions</h1>
+        <p class="intro">Discover a curated selection of coffees, delivered on a schedule that suits you.</p>
+        {% if subscription_bundles %}
+            <div class="bundle-grid">
+                {% for bundle in subscription_bundles %}
+                    <a class="bundle-card" href="{% url 'bundles:detail' bundle.id %}">
+                        {% for item in bundle.bundle_items.all %}
+                            {% if forloop.first %}
+                                {% if item.product.image %}
+                                    <img class="bundle-image" src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                {% else %}
+                                    <span class="placeholder" aria-hidden="true">☕</span>
+                                {% endif %}
+                            {% endif %}
+                        {% empty %}
+                            <span class="placeholder" aria-hidden="true">☕</span>
+                        {% endfor %}
+                        <div class="bundle-content">
+                            <h2>{{ bundle.name }}</h2>
+                            <p>{{ bundle.description|default:"A curated coffee bundle."|truncatewords:20 }}</p>
+                            <p class="price">${{ bundle.price_per_delivery }} / {{ bundle.get_billing_frequency_display|lower }}</p>
+                            <p>{{ bundle.total_items }} item{{ bundle.total_items|pluralize }} per delivery</p>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty">No active subscriptions are available right now.</p>
+        {% endif %}
+{% endblock %}

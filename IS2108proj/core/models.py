@@ -174,8 +174,24 @@ class QuestionnaireResponse(models.Model):
         ('caffeinated', 'Caffeinated'),
         ('decaf', 'Decaf'),
     ]
+    PREDICTED_ROAST_CHOICES = [
+        ('light', 'Light'),
+        ('medium', 'Medium'),
+        ('dark', 'Dark'),
+    ]
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='questionnaire_responses')
-    preferred_roast = models.CharField(max_length=50, choices=ROAST_LEVEL_CHOICES)
+    preferred_roast = models.CharField(
+        max_length=50,
+        choices=ROAST_LEVEL_CHOICES,
+        blank=True,
+        default="",
+    )
+    predicted_roast = models.CharField(
+        max_length=20,
+        choices=PREDICTED_ROAST_CHOICES,
+        blank=True,
+        default="",
+    )
     preferred_flavour = models.CharField(max_length=50, choices=FLAVOUR_CHOICES)
     preferred_brewing_method = models.CharField(max_length=50, choices=BREWING_METHOD_CHOICES)
     preferred_caffeine_type = models.CharField(max_length=50, choices=CAFFEINE_TYPE_CHOICES)
@@ -231,3 +247,41 @@ class Review(models.Model):
     def __str__(self):
         return f"Review ({self.rating}/5) by {self.customer.username} for {self.product.name}"
 
+
+class SubscriptionBundleReview(models.Model):
+    RATING_CHOICES = [
+        (1, "1 Star"),
+        (2, "2 Stars"),
+        (3, "3 Stars"),
+        (4, "4 Stars"),
+        (5, "5 Stars"),
+    ]
+
+    subscription_bundle = models.ForeignKey(
+        SubscriptionBundle,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    customer = models.ForeignKey(
+        CustomerProfile,
+        on_delete=models.CASCADE,
+        related_name="subscription_bundle_reviews",
+    )
+    rating = models.PositiveIntegerField(choices=RATING_CHOICES)
+    comment = models.TextField()
+    is_visible = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subscription_bundle", "customer"],
+                name="unique_review_per_bundle_customer",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"Review ({self.rating}/5) by {self.customer.user.username} "
+            f"for {self.subscription_bundle.name}"
+        )

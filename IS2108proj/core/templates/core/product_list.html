@@ -1,75 +1,272 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Products</title>
+{% extends "customer/base_customer.html" %}
+{% block title %}Shop | BrewMatch{% endblock %}
+{% block extra_head %}
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .filters { margin-bottom: 20px; }
-        .filters a {
-            display: inline-block;
-            margin-right: 10px;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
+        :root {
+            --ink: #282520;
+            --muted: #716b62;
+            --line: #ded8ce;
+            --paper: #fffefa;
+            --cream: #f7f3eb;
+            --coffee: #70452f;
+            --coffee-dark: #4b3023;
+            --accent: #e7d4be;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--paper); color: var(--ink); font-family: Arial, sans-serif; }
+        a { color: inherit; }
+        .topbar {
+            display: flex;
+            min-height: 82px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 14px clamp(20px, 4vw, 64px);
+            border-bottom: 1px solid var(--line);
+        }
+        .brand { color: var(--coffee-dark); font-size: 2rem; line-height: 1; text-decoration: none; }
+        .brand-name { font-size: 1rem; font-weight: 700; }
+        .top-actions, .top-actions form { display: flex; align-items: center; gap: 12px; margin: 0; }
+        .pill-link, .logout-button {
+            display: inline-flex;
+            min-height: 42px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--ink);
+            font: inherit;
             text-decoration: none;
-            color: #333;
         }
-        .filters a.active {
-            background: #1f2937;
-            color: white;
-        }
-        .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-        .product-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
-            background: #fafafa;
-        }
-        .product-card img {
+        .pill-link:hover, .logout-button:hover { background: var(--cream); }
+        .logout-button { cursor: pointer; }
+        .layout { display: grid; min-height: calc(100vh - 82px); grid-template-columns: 250px minmax(0, 1fr); }
+        .sidebar { padding: 30px 20px; border-right: 1px solid var(--line); background: #f8f5ef; }
+        .side-nav { position: sticky; top: 24px; display: grid; gap: 7px; }
+        .side-nav a { padding: 13px 16px; border-radius: 9px; color: var(--muted); text-decoration: none; }
+        .side-nav a:hover, .side-nav a.active { background: var(--accent); color: var(--coffee-dark); }
+        main { width: min(100%, 1380px); min-width: 0; margin: 0 auto; padding: clamp(20px, 3vw, 42px); }
+        h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 3vw, 2.2rem); }
+        .intro { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
+        .search-panel { margin-bottom: 22px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: #fcfaf6; }
+        .search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+        .search-row input, .filter-grid input, .filter-grid select {
             width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-bottom: 10px;
+            min-height: 42px;
+            padding: 9px 12px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: white;
+            color: var(--ink);
+            font: inherit;
         }
-        .product-card h2 { margin: 0 0 8px; }
-        .product-card a { text-decoration: none; color: #0b5ed7; }
-        .price { font-weight: bold; }
+        .search-button, .filter-button, .reset-link {
+            display: inline-flex;
+            min-height: 42px;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 17px;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            background: white;
+            color: var(--ink);
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .search-button { background: var(--coffee); border-color: var(--coffee); color: white; }
+        .search-button:hover { background: var(--coffee-dark); }
+        .filter-details { margin-top: 12px; }
+        .filter-details summary {
+            display: inline-flex;
+            min-height: 40px;
+            align-items: center;
+            padding: 8px 15px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: white;
+            cursor: pointer;
+            list-style: none;
+        }
+        .filter-details summary::-webkit-details-marker { display: none; }
+        .filter-details summary::after { margin-left: 8px; content: "▾"; }
+        .filter-details[open] summary::after { content: "▴"; }
+        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+        .filter-field { display: grid; gap: 6px; }
+        .filter-field label { color: var(--muted); font-size: .88rem; }
+        .filter-actions { display: flex; align-items: end; gap: 8px; }
+        .filter-errors { margin: 12px 0 0; padding: 0; color: #9a3e32; list-style: none; }
+        .catalogue-section { margin-top: 24px; padding: clamp(16px, 2vw, 24px); border: 1px solid var(--line); border-radius: 16px; background: white; }
+        .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .section-heading h2 { margin: 0; font-size: 1.3rem; }
+        .result-count { color: var(--muted); font-size: .9rem; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+        .product-card, .bundle-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: white; text-decoration: none; }
+        .product-card:hover, .bundle-card:hover { border-color: var(--coffee); transform: translateY(-1px); }
+        .card-image, .image-placeholder { display: grid; width: 100%; height: 165px; place-items: center; background: var(--cream); color: #94785f; font-size: 2.5rem; object-fit: cover; }
+        .image-placeholder { display: grid; }
+        .card-content { padding: 13px; }
+        .card-content h3 { margin: 0 0 7px; color: var(--coffee-dark); font-size: 1rem; }
+        .card-content p { margin: 5px 0; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+        .card-content .price { color: var(--coffee-dark); font-size: 1rem; font-weight: 700; }
+        .empty-state { padding: 18px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); line-height: 1.5; }
+        @media (max-width: 720px) {
+            .topbar { padding: 12px 16px; }
+            .brand-name { display: none; }
+            .pill-link, .logout-button { min-height: 38px; padding: 7px 12px; font-size: .9rem; }
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+            .side-nav { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+            .side-nav a { padding: 10px 6px; text-align: center; font-size: .85rem; }
+            main { padding: 20px 16px 36px; }
+        }
+        @media (max-width: 480px) {
+            .topbar { gap: 8px; }
+            .top-actions { gap: 6px; }
+            .side-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .search-row { grid-template-columns: 1fr; }
+            .search-button { width: 100%; }
+            .filter-grid { grid-template-columns: 1fr 1fr; }
+            .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+            .card-image, .image-placeholder { height: 125px; }
+        }
     </style>
-</head>
-<body>
-    <h1>Products</h1>
-    <p><a href="{% url 'core:cart' %}">Cart ({{ cart_count }})</a></p>
+{% endblock %}
+{% block content %}
+            <h1>Shop</h1>
+            <p class="intro">Explore our coffees and curated subscription bundles.</p>
+            <section class="search-panel" aria-label="Search and filters">
+                <form method="get" action="{% url 'core:product_list' %}">
+                    <div class="search-row">
+                        <input type="search" name="q" value="{{ search_query }}" placeholder="Search products and subscriptions..." aria-label="Search products and subscriptions">
+                        <button class="search-button" type="submit">Search</button>
+                    </div>
+                    <details class="filter-details" {% if selected_category or selected_roast or selected_caffeine or selected_origin or min_price or max_price %}open{% endif %}>
+                        <summary>Filter by</summary>
+                        <div class="filter-grid">
+                            <div class="filter-field">
+                                <label for="category">Category</label>
+                                <select id="category" name="category">
+                                    <option value="">All categories</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if selected_category|stringformat:"s" == category.id|stringformat:"s" %}selected{% endif %}>{{ category.get_name_display }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label for="roast_level">Roast level</label>
+                                <select id="roast_level" name="roast_level">
+                                    <option value="">Any roast</option>
+                                    {% for value, label in roast_levels %}
+                                        <option value="{{ value }}" {% if selected_roast == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label for="caffeine_type">Caffeine</label>
+                                <select id="caffeine_type" name="caffeine_type">
+                                    <option value="">Any</option>
+                                    {% for value, label in caffeine_types %}
+                                        <option value="{{ value }}" {% if selected_caffeine == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label for="origin">Origin</label>
+                                <select id="origin" name="origin">
+                                    <option value="">Any origin</option>
+                                    {% for origin in origins %}
+                                        <option value="{{ origin }}" {% if selected_origin == origin %}selected{% endif %}>{{ origin }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label for="min_price">Minimum price</label>
+                                <input id="min_price" type="number" min="0" step="0.01" name="min_price" value="{{ min_price }}" placeholder="$0.00">
+                            </div>
+                            <div class="filter-field">
+                                <label for="max_price">Maximum price</label>
+                                <input id="max_price" type="number" min="0" step="0.01" name="max_price" value="{{ max_price }}" placeholder="No limit">
+                            </div>
+                            <div class="filter-actions">
+                                <button class="search-button" type="submit">Apply filters</button>
+                                <a class="reset-link" href="{% url 'core:product_list' %}">Reset</a>
+                            </div>
+                        </div>
+                    </details>
+                    {% if filter_errors %}<ul class="filter-errors">{% for error in filter_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </form>
+            </section>
 
-    <div class="filters">
-        <a href="?" {% if not selected_category %}class="active"{% endif %}>All</a>
-        {% for category in categories %}
-            <a href="?category={{ category.id }}"
-               {% if selected_category|stringformat:"s" == category.id|stringformat:"s" %}class="active"{% endif %}>
-                {{ category.get_name_display }}
-            </a>
-        {% endfor %}
-    </div>
-
-    {% if products %}
-        <div class="products">
-            {% for product in products %}
-                <div class="product-card">
-                    {% if product.image %}
-                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
-                    {% endif %}
-
-                    <h2><a href="{% url 'core:product_detail' product.id %}">{{ product.name }}</a></h2>
-                    <p>{{ product.category.name }}</p>
-                    <p>{{ product.description|truncatewords:18 }}</p>
-                    <p class="price">${{ product.price }}</p>
-                    <p>Status: {{ product.stock_status }}</p>
+            <section class="catalogue-section" aria-labelledby="products-heading">
+                <div class="section-heading">
+                    <h2 id="products-heading">Products</h2>
+                    <span class="result-count">{{ products|length }} result{{ products|length|pluralize }}</span>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p>No products available for this category.</p>
-    {% endif %}
-</body>
-</html>
+                {% if products %}
+                    <div class="card-grid">
+                        {% for product in products %}
+                            <a class="product-card" href="{% url 'core:product_detail' product.id %}">
+                                {% if product.image %}
+                                    <img class="card-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                {% else %}
+                                    <span class="image-placeholder" aria-hidden="true">☕</span>
+                                {% endif %}
+                                <div class="card-content">
+                                    <h3>{{ product.name }}</h3>
+                                    <p>{{ product.category.get_name_display }} · {{ product.get_roast_level_display }} roast</p>
+                                    {% if product.origin_country %}<p>Origin: {{ product.origin_country }}</p>{% endif %}
+                                    <p>{{ product.description|default:product.tasting_notes|default:"Freshly roasted coffee."|truncatewords:14 }}</p>
+                                    <p class="price">${{ product.price }}</p>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>No coffees match the current search and filter combination. Try removing a filter or clearing your search and filters.</p>
+                        <a class="reset-link" href="{% url 'core:product_list' %}">Clear search and filters</a>
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="catalogue-section" aria-labelledby="subscriptions-heading">
+                <div class="section-heading">
+                    <h2 id="subscriptions-heading">Subscriptions</h2>
+                    <span class="result-count">{{ subscription_bundles|length }} result{{ subscription_bundles|length|pluralize }}</span>
+                </div>
+                {% if subscription_bundles %}
+                    <div class="card-grid">
+                        {% for bundle in subscription_bundles %}
+                            <a class="bundle-card" href="{% url 'bundles:detail' bundle.id %}">
+                                {% for item in bundle.bundle_items.all %}
+                                    {% if forloop.first %}
+                                        {% if item.product.image %}
+                                            <img class="card-image" src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                        {% else %}
+                                            <span class="image-placeholder" aria-hidden="true">☕</span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% empty %}
+                                    <span class="image-placeholder" aria-hidden="true">☕</span>
+                                {% endfor %}
+                                <div class="card-content">
+                                    <h3>{{ bundle.name }}</h3>
+                                    <p>{{ bundle.description|default:"A curated coffee bundle."|truncatewords:16 }}</p>
+                                    <p class="price">${{ bundle.price_per_delivery }} / {{ bundle.get_billing_frequency_display|lower }}</p>
+                                    <p>{{ bundle.total_items }} item{{ bundle.total_items|pluralize }} per delivery</p>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>No active subscriptions match your search. Try another search or clear your search and filters.</p>
+                        <a class="reset-link" href="{% url 'core:product_list' %}">Clear search and filters</a>
+                    </div>
+                {% endif %}
+            </section>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BrewMatch{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'customer/css/app.css' %}">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="{% url 'customer:customer_home' %}" aria-label="BrewMatch home">
+            <span class="brand-mark" aria-hidden="true">☕</span>
+            <span class="brand-name">BrewMatch</span>
+        </a>
+        <div class="top-actions">
+            <a class="pill-link{% if request.resolver_match.url_name == 'cart' or request.resolver_match.url_name == 'checkout' %} active{% endif %}" href="{% url 'core:cart' %}"{% if request.resolver_match.url_name == 'cart' or request.resolver_match.url_name == 'checkout' %} aria-current="page"{% endif %}>
+                My Cart <span aria-hidden="true">🛒</span>{% if cart_count %} ({{ cart_count }}){% endif %}
+            </a>
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="logout-button" type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a class="pill-link" href="{% url 'customer:customer_login' %}">Log in</a>
+            {% endif %}
+        </div>
+    </header>
+    <div class="layout">
+        <aside class="sidebar">
+            <nav class="side-nav" aria-label="Customer navigation">
+                <a class="{% if request.resolver_match.url_name == 'customer_home' %}active{% endif %}" href="{% url 'customer:customer_home' %}"{% if request.resolver_match.url_name == 'customer_home' %} aria-current="page"{% endif %}>Home</a>
+                <a class="{% if request.resolver_match.url_name == 'customer_questionnaire' %}active{% endif %}" href="{% url 'customer:customer_questionnaire' %}"{% if request.resolver_match.url_name == 'customer_questionnaire' %} aria-current="page"{% endif %}>Coffee Quiz</a>
+                <a class="{% if request.resolver_match.url_name == 'recommendations' %}active{% endif %}" href="{% url 'customer:recommendations' %}"{% if request.resolver_match.url_name == 'recommendations' %} aria-current="page"{% endif %}>My Recommendations</a>
+                <a class="{% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'product_list' or request.resolver_match.namespace == 'bundles' %}active{% endif %}" href="{% url 'core:product_list' %}"{% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'product_list' or request.resolver_match.namespace == 'bundles' %} aria-current="page"{% endif %}>Shop</a>
+                <a class="{% if request.resolver_match.url_name == 'order_tracking' or request.resolver_match.url_name == 'order_detail' %}active{% endif %}" href="{% url 'customer:order_tracking' %}"{% if request.resolver_match.url_name == 'order_tracking' or request.resolver_match.url_name == 'order_detail' %} aria-current="page"{% endif %}>Track my order</a>
+                <a class="{% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}" href="{% url 'customer:customer_profile' %}"{% if request.resolver_match.url_name == 'customer_profile' %} aria-current="page"{% endif %}>My Profile</a>
+            </nav>
+        </aside>
+        <main class="page-content">
+            {% if messages %}
+                <ul class="app-messages" role="status">
+                    {% for message in messages %}
+                        <li class="app-message {{ message.tags }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>
