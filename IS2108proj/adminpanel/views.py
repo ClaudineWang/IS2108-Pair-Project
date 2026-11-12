@@ -2,13 +2,24 @@ from decimal import Decimal
 from django.shortcuts import redirect, render
 from django.contrib.auth import login, logout
 from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet, ReviewForm, AdminLoginForm
+<<<<<<< HEAD
+from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription
+from django.db import models, transaction
+from django.db.models import Q, Count
+=======
 from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription, OrderItem
 from django.db import models
 from django.db.models import Q, Count, F, Sum
+>>>>>>> origin/main
 from django.db.models.functions import Coalesce
 from core.services import advance_subscription_delivery
 from core.currency import RATES as CURRENCY_RATES, get_selected_currency
 from django.views.decorators.http import require_POST
+<<<<<<< HEAD
+from adminpanel.decorators import staff_required
+
+
+=======
 from .decorators import staff_required
 from django.db.models.functions import Coalesce, TruncMonth
 from core.forecasting import get_restock_predictions
@@ -16,6 +27,7 @@ from core.pagination import paginate_queryset
 
 
 
+>>>>>>> origin/main
 @staff_required
 def product_list(request):
     products = Product.objects.all().order_by('id')
@@ -61,6 +73,10 @@ def product_list(request):
     return render(request, 'adminpanel/product_list.html', context)
 
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
 @staff_required
 def product_add(request):
     selected_currency = get_selected_currency(request)
@@ -100,7 +116,10 @@ def product_add(request):
         "adminpanel/product_form.html",
         context
     )
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 @staff_required
 def product_update(request, product_id):
     product = Product.objects.get(id=product_id)
@@ -191,7 +210,10 @@ def inventory_list(request):
     return render(request, 'adminpanel/inventory_list.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 def inventory_update(request, product_id):
     product = Product.objects.get(id=product_id)
 
@@ -212,7 +234,10 @@ def inventory_update(request, product_id):
     return render(request, 'adminpanel/inventory_form.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 def order_list(request):
     delivery_statuses = Order.DELIVERY_STATUS
     orders = Order.objects.all().order_by("-created_at")
@@ -264,7 +289,10 @@ def order_list(request):
     return render(request, 'adminpanel/order_list.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 def order_update(request, order_id):
     order = Order.objects.prefetch_related("items__product").get(id=order_id)
 
@@ -280,17 +308,28 @@ def order_update(request, order_id):
             "currency",
             request.session.get("currency", "SGD")
         )
-        form = OrderForm(request.POST, instance=order)
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(id=order_id)
+            previous_status = order.delivery_status
+            form = OrderForm(request.POST, instance=order)
 
-        if form.is_valid():
-            updated_order = form.save()
-            if (
-                order.delivery_status != "delivered"
-                and updated_order.delivery_status == "delivered"
-                and updated_order.subscription
-            ):
-                advance_subscription_delivery(updated_order.subscription)
-            return redirect("adminpanel:order_list")
+            if form.is_valid():
+                updated_order = form.save()
+                if (
+                    previous_status != "cancelled"
+                    and updated_order.delivery_status == "cancelled"
+                ):
+                    for item in order.items.all():
+                        Product.objects.filter(pk=item.product_id).update(
+                            stock_level=models.F("stock_level") + item.quantity
+                        )
+                if (
+                    previous_status != "delivered"
+                    and updated_order.delivery_status == "delivered"
+                    and updated_order.subscription
+                ):
+                    advance_subscription_delivery(updated_order.subscription)
+                return redirect("adminpanel:order_list")
     else:
         form = OrderForm(instance=order)
 
@@ -361,7 +400,10 @@ def customer_list(request):
     return render(request, "adminpanel/customer_list.html", context)
 
 @staff_required
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 def customer_view (request, customer_id):
     selected_currency = get_selected_currency(request)
 
@@ -392,6 +434,7 @@ def customer_view (request, customer_id):
     return render(request, 'adminpanel/customer_view.html', context)
 @staff_required
 
+@staff_required
 def subscription_bundle_list(request):
     selected_currency = get_selected_currency(request)
     if selected_currency not in CURRENCY_RATES:
@@ -434,7 +477,10 @@ def subscription_bundle_list(request):
     return render(request, 'adminpanel/subscription_bundle_list.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 def subscription_bundle_update(request, subscription_bundle_id):
     selected_currency = get_selected_currency(request)
     if selected_currency not in CURRENCY_RATES:
@@ -486,6 +532,10 @@ def subscription_bundle_update(request, subscription_bundle_id):
     }
     return render(request, "adminpanel/subscription_bundle_form.html", context)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
 @staff_required
 def subscription_bundle_add(request):
     selected_currency = get_selected_currency(request)
@@ -530,7 +580,10 @@ def subscription_bundle_add(request):
     return render(request, "adminpanel/subscription_bundle_form.html", context)
 
 @staff_required
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
 def review_list(request):
     reviews = Review.objects.all().order_by('rating')
     search_query = request.GET.get("search", "").strip()
@@ -667,6 +720,7 @@ def admin_login(request):
     })
 
 @require_POST
+@staff_required
 def admin_logout(request):
     logout(request)
     return redirect("adminpanel:admin_dashboard")

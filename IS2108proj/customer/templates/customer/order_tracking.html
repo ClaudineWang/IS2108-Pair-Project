@@ -1,0 +1,201 @@
+{% extends "customer/base_customer.html" %}
+{% block title %}Track My Order | BrewMatch{% endblock %}
+{% block extra_head %}
+    <style>
+        :root {
+            --ink: #282520;
+            --muted: #716b62;
+            --line: #ded8ce;
+            --paper: #fffefa;
+            --cream: #f7f3eb;
+            --coffee: #70452f;
+            --coffee-dark: #4b3023;
+            --accent: #e7d4be;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--paper); color: var(--ink); font-family: Arial, sans-serif; }
+        a { color: inherit; }
+        .topbar {
+            display: flex;
+            min-height: 82px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 14px clamp(20px, 4vw, 64px);
+            border-bottom: 1px solid var(--line);
+        }
+        .brand { color: var(--coffee-dark); font-size: 2rem; line-height: 1; text-decoration: none; }
+        .brand-name { font-size: 1rem; font-weight: 700; }
+        .top-actions, .top-actions form { display: flex; align-items: center; gap: 12px; margin: 0; }
+        .pill-link, .logout-button {
+            display: inline-flex;
+            min-height: 42px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--ink);
+            font: inherit;
+            text-decoration: none;
+        }
+        .pill-link:hover, .logout-button:hover { background: var(--cream); }
+        .logout-button { cursor: pointer; }
+        .layout { display: grid; min-height: calc(100vh - 82px); grid-template-columns: 250px minmax(0, 1fr); }
+        .sidebar { padding: 30px 20px; border-right: 1px solid var(--line); background: #f8f5ef; }
+        .side-nav { position: sticky; top: 24px; display: grid; gap: 7px; }
+        .side-nav a { padding: 13px 16px; border-radius: 9px; color: var(--muted); text-decoration: none; }
+        .side-nav a:hover, .side-nav a.active { background: var(--accent); color: var(--coffee-dark); }
+        main { width: min(100%, 1380px); min-width: 0; margin: 0 auto; padding: clamp(24px, 4vw, 56px); }
+        h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 3vw, 2.2rem); }
+        .intro { margin: 0 0 26px; color: var(--muted); line-height: 1.5; }
+        .order-tracking, .past-orders { padding: clamp(18px, 3vw, 28px); border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+        .past-orders { margin-top: 16px; }
+        .order-subheading {
+            display: inline-flex;
+            min-width: min(270px, 100%);
+            justify-content: center;
+            margin: 0 0 14px;
+            padding: 8px 18px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: .92rem;
+        }
+        .order-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .order-meta span {
+            padding: 7px 14px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: .9rem;
+        }
+        .order-tracker {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin: 6px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+        .order-tracker::before {
+            position: absolute;
+            top: 10px;
+            right: 12.5%;
+            left: 12.5%;
+            height: 2px;
+            background: var(--line);
+            content: "";
+        }
+        .order-step { position: relative; display: grid; justify-items: center; gap: 9px; text-align: center; }
+        .order-step-dot {
+            z-index: 1;
+            width: 21px;
+            height: 21px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            background: #c9c4bc;
+            box-shadow: 0 0 0 1px #c9c4bc;
+        }
+        .order-step-label { padding: 5px 13px; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--muted); font-size: .9rem; }
+        .order-step.is-complete .order-step-dot, .order-step.is-current .order-step-dot { background: var(--coffee); box-shadow: 0 0 0 1px var(--coffee); }
+        .order-step.is-current .order-step-label { border-color: var(--coffee); background: var(--accent); color: var(--coffee-dark); }
+        .past-order-list { display: grid; gap: 10px; }
+        .past-order-row {
+            display: grid;
+            grid-template-columns: minmax(92px, .7fr) minmax(150px, 1.4fr) minmax(100px, .7fr) minmax(115px, .8fr);
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .past-order-row:last-child { border-bottom: 0; }
+        .order-chip, .order-action {
+            display: inline-flex;
+            min-height: 38px;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 14px;
+            border: 1px solid var(--ink);
+            border-radius: 999px;
+            background: white;
+            color: var(--ink);
+            font: inherit;
+            font-size: .88rem;
+            text-align: center;
+            text-decoration: none;
+        }
+        .order-status { justify-self: center; text-transform: capitalize; }
+        .order-status.is-delivered { background: #e8e5e0; }
+        .order-action:hover { background: var(--cream); }
+        .reorder-form { margin: 0; }
+        .order-action-button { cursor: pointer; }
+        .empty-state { padding: 18px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); line-height: 1.5; }
+        @media (max-width: 720px) {
+            .topbar { padding: 12px 16px; }
+            .brand-name { display: none; }
+            .pill-link, .logout-button { min-height: 38px; padding: 7px 12px; font-size: .9rem; }
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+            .side-nav { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+            .side-nav a { padding: 10px 6px; text-align: center; font-size: .85rem; }
+            main { padding: 20px 16px 36px; }
+            .past-order-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+            .past-order-row > * { justify-self: stretch; }
+            .order-status { justify-self: stretch; }
+        }
+        @media (max-width: 420px) {
+            .topbar { gap: 8px; }
+            .top-actions { gap: 6px; }
+            .side-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .order-meta { gap: 7px; }
+            .order-meta span { font-size: .8rem; }
+            .order-step-label { padding: 5px 7px; font-size: .78rem; }
+        }
+    </style>
+{% endblock %}
+{% block content %}
+            <h1>Track my order</h1>
+            <p class="intro">Follow your current delivery and review your previous orders.</p>
+            {% if current_order %}
+                <section class="order-tracking" aria-labelledby="current-order-heading">
+                    <h2 class="order-subheading" id="current-order-heading">Current Order</h2>
+                    <div class="order-meta">
+                        <span>Order #{{ current_order.id }}</span>
+                        <span>Order date: {{ current_order.created_at|date:"M j, Y" }}</span>
+                        <span>Order time: {{ current_order.created_at|date:"g:i A" }}</span>
+                    </div>
+                    <ol class="order-tracker" aria-label="Order progress">
+                        {% for step in order_status_steps %}
+                            <li class="order-step{% if forloop.counter0 < order_progress %} is-complete{% elif forloop.counter0 == order_progress %} is-current{% endif %}">
+                                <span class="order-step-dot" aria-hidden="true"></span>
+                                <span class="order-step-label">{{ step|capfirst }}</span>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </section>
+            {% endif %}
+            <section class="past-orders" aria-labelledby="past-orders-heading">
+                <h2 class="order-subheading" id="past-orders-heading">Past Orders</h2>
+                {% if past_orders %}
+                    <div class="past-order-list">
+                        {% for order in past_orders %}
+                            <div class="past-order-row">
+                                <span class="order-chip">Order #{{ order.id }}</span>
+                                <a class="order-action" href="{% url 'customer:order_detail' order.id %}">View Order Details</a>
+                                <span class="order-chip order-status{% if order.delivery_status == 'delivered' %} is-delivered{% endif %}">{{ order.get_delivery_status_display }}</span>
+                                <form class="reorder-form" method="post" action="{% url 'customer:order_again' order.id %}">
+                                    {% csrf_token %}
+                                    <button class="order-action order-action-button" type="submit">Order Again</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">{% if current_order %}Your previous orders will appear here.{% else %}Your orders will appear here after you place one.{% endif %}</p>
+                {% endif %}
+            </section>
+{% endblock %}

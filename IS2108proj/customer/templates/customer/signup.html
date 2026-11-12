@@ -72,6 +72,12 @@
         margin: 0;
         padding-left: 18px;
     }
+
+    .field-error {
+        color: #b91c1c;
+        margin: 0;
+        font-size: 0.9rem;
+    }
 </style>
 
 <div class="auth-card">
@@ -83,26 +89,41 @@
         <div class="field">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" value="{{ form.username.value|default:'' }}" required>
+            {% for error in form.username.errors %}
+                <p class="field-error">{{ error }}</p>
+            {% endfor %}
         </div>
 
         <div class="field">
             <label for="email">Email</label>
             <input type="email" id="email" name="email" value="{{ form.email.value|default:'' }}" required>
+            {% for error in form.email.errors %}
+                <p class="field-error">{{ error }}</p>
+            {% endfor %}
         </div>
 
         <div class="field">
             <label for="phone_number">Contact Number</label>
             <input type="text" id="phone_number" name="phone_number" value="{{ form.phone_number.value|default:'' }}" required>
+            {% for error in form.phone_number.errors %}
+                <p class="field-error">{{ error }}</p>
+            {% endfor %}
         </div>
 
         <div class="field">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
+            {% for error in form.password.errors %}
+                <p class="field-error">{{ error }}</p>
+            {% endfor %}
         </div>
 
         <div class="field">
             <label for="confirm_password">Confirm Password</label>
             <input type="password" id="confirm_password" name="confirm_password" required>
+            {% for error in form.confirm_password.errors %}
+                <p class="field-error">{{ error }}</p>
+            {% endfor %}
         </div>
 
         {% if form.non_field_errors %}
