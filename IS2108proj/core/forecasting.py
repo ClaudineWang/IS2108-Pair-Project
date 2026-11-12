@@ -1,8 +1,17 @@
+from collections import defaultdict
+from datetime import timedelta
 from pathlib import Path
+
 import joblib
-from django.conf import settings
-from core.models import OrderItem, Product
 import pandas as pd
+from django.conf import settings
+
+from core.demand_features import (
+    build_next_week_features,
+    build_weekly_sales,
+)
+from core.models import CustomerSubscription
+
 
 MODEL_PATH = (
     Path(settings.BASE_DIR)
@@ -20,185 +29,108 @@ def load_demand_model():
         artifact["features"],
     )
 
+
+def get_scheduled_subscription_units(forecast_week):
+    """Return known subscription units due in a forecast week by product.
+
+    A product's expected subscription demand is calculated from:
+
+        active subscription × BundleItem.quantity
+
+    Only deliveries whose next_delivery_date falls inside the forecast week
+    are counted. This avoids treating a monthly subscription as weekly demand.
+    """
+    week_start = forecast_week.date()
+    week_end = week_start + timedelta(days=7)
+    subscription_units = defaultdict(int)
+
+    subscriptions = (
+        CustomerSubscription.objects
+        .filter(
+            status="active",
+            next_delivery_date__gte=week_start,
+            next_delivery_date__lt=week_end,
+        )
+        .prefetch_related("bundle__bundle_items")
+    )
+
+    for subscription in subscriptions:
+        delivery_date = subscription.next_delivery_date
+
+        if (
+            subscription.end_date is not None
+            and delivery_date > subscription.end_date.date()
+        ):
+            continue
+
+        for bundle_item in subscription.bundle.bundle_items.all():
+            subscription_units[bundle_item.product_id] += bundle_item.quantity
+
+    return subscription_units
+
+
 def get_restock_predictions():
     model, feature_columns = load_demand_model()
+    products, weekly_sales = build_weekly_sales()
 
-    sales_rows = list(
-        OrderItem.objects
-        .exclude(order__delivery_status="cancelled")
-        .values(
-            "order__created_at",
-            "product_id",
-            "quantity",
-        )
-    )
-
-    if not sales_rows:
+    if weekly_sales.empty:
         return []
 
-    products = pd.DataFrame(
-        list(
-            Product.objects.values(
-                "id",
-                "name",
-                "stock_level",
-                "reorder_threshold",
-            )
-        )
-    )
-
-    products = products.rename(
-        columns={
-            "id": "product_id",
-            "name": "product_name",
-        }
-    )
-
-    sales = pd.DataFrame(sales_rows)
-
-    sales = sales.rename(
-        columns={
-            "order__created_at": "sale_date",
-            "quantity": "units_sold",
-        }
-    )
-
-    sales["sale_date"] = pd.to_datetime(
-        sales["sale_date"],
-        utc=True
-    ).dt.tz_localize(None)
-
-    sales["week"] = (
-        sales["sale_date"]
-        .dt.to_period("W")
-        .dt.start_time
-    )
-
-    weekly_sales = (
-        sales
-        .groupby(
-            ["week", "product_id"],
-            as_index=False
-        )["units_sold"]
-        .sum()
-    )
-
-    weekly_sales = weekly_sales.merge(
-        products[["product_id", "product_name"]],
-        on="product_id",
-        how="left"
-    )
-
-    all_weeks = pd.date_range(
-        weekly_sales["week"].min(),
-        weekly_sales["week"].max(),
-        freq="W-MON"
-    )
-
-    product_calendar = products.assign(key=1).merge(
-        pd.DataFrame({
-            "week": all_weeks,
-            "key": 1,
-        }),
-        on="key"
-    ).drop(columns="key")
-
-    weekly_sales = product_calendar.merge(
+    forecast_rows = build_next_week_features(
         weekly_sales,
-        on=["week", "product_id", "product_name"],
-        how="left"
+        products,
     )
 
-    weekly_sales["units_sold"] = (
-        weekly_sales["units_sold"]
-        .fillna(0)
-        .astype(int)
-    )
-
-    weekly_sales = weekly_sales.sort_values(
-        ["product_id", "week"]
-    )
-
-    for lag in [1, 2, 4]:
-        weekly_sales[f"sales_lag_{lag}"] = (
-            weekly_sales
-            .groupby("product_id")["units_sold"]
-            .shift(lag)
-        )
-
-    weekly_sales["rolling_4_week_average"] = (
-        weekly_sales
-        .groupby("product_id")["units_sold"]
-        .transform(
-            lambda values: (
-                values
-                .shift(1)
-                .rolling(4)
-                .mean()
-            )
-        )
-    )
-
-    weekly_sales["month"] = weekly_sales["week"].dt.month
-
-    weekly_sales["week_of_year"] = (
-        weekly_sales["week"]
-        .dt.isocalendar()
-        .week
-        .astype(int)
-    )
-
-    required_features = [
-        "sales_lag_1",
-        "sales_lag_2",
-        "sales_lag_4",
-        "rolling_4_week_average",
-    ]
-
-    latest = (
-        weekly_sales
-        .dropna(subset=required_features)
-        .sort_values("week")
-        .groupby("product_id")
-        .tail(1)
-        .copy()
-    )
-
-    if latest.empty:
+    if forecast_rows.empty:
         return []
 
     feature_data = pd.get_dummies(
-        latest,
+        forecast_rows,
         columns=["product_id"],
-        dtype=float
+        dtype=float,
     )
 
-    # Add any missing columns expected by the trained model.
+    # Match the exact columns used when the model was trained.
     for column in feature_columns:
         if column not in feature_data.columns:
             feature_data[column] = 0
 
     model_input = feature_data[feature_columns]
+    predicted_base_demand = model.predict(model_input)
 
-    predicted_units = model.predict(model_input)
-
+    forecast_week = forecast_rows["week"].iloc[0]
+    subscription_units = get_scheduled_subscription_units(forecast_week)
     predictions = []
 
     for row, prediction in zip(
-        latest.itertuples(index=False),
-        predicted_units
+        forecast_rows.itertuples(index=False),
+        predicted_base_demand,
     ):
-        predicted_demand = max(
+        predicted_base_units = max(
             0,
-            int(round(float(prediction)))
+            int(round(float(prediction))),
+        )
+        committed_subscription_units = subscription_units.get(
+            row.product_id,
+            0,
+        )
+        predicted_demand = (
+            predicted_base_units
+            + committed_subscription_units
         )
 
-        current_stock = int(row.stock_level)
-        reorder_threshold = int(row.reorder_threshold)
+        current_stock = int(products.loc[
+            products["product_id"] == row.product_id,
+            "stock_level",
+        ].iloc[0])
+        reorder_threshold = int(products.loc[
+            products["product_id"] == row.product_id,
+            "reorder_threshold",
+        ].iloc[0])
 
         suggested_restock = max(
             0,
-            predicted_demand - current_stock
+            predicted_demand - current_stock,
         )
 
         if current_stock == 0:
@@ -211,8 +143,11 @@ def get_restock_predictions():
         predictions.append({
             "product_id": row.product_id,
             "product_name": row.product_name,
-            "current_stock": current_stock,
+            "forecast_week": forecast_week.date(),
+            "predicted_base_demand": predicted_base_units,
+            "subscription_units": committed_subscription_units,
             "predicted_demand": predicted_demand,
+            "current_stock": current_stock,
             "suggested_restock": suggested_restock,
             "stock_status": stock_status,
         })
