@@ -1,38 +1,33 @@
 from decimal import Decimal
-
-from django.contrib.auth import login, logout
-from django.db import models, transaction
-from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import Coalesce, TruncMonth
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_POST
-
-from adminpanel.forms import (
-    AdminLoginForm,
-    BundleItemForm,
-    BundleItemFormSet,
-    InventoryForm,
-    OrderForm,
-    ProductForm,
-    ReviewForm,
-    SubscriptionBundleForm,
-)
-from core.currency import RATES as CURRENCY_RATES, get_selected_currency
-from core.forecasting import get_restock_predictions
-from core.models import (
-    BundleItem,
-    Category,
-    CustomerProfile,
-    CustomerSubscription,
-    Order,
-    OrderItem,
-    Product,
-    Review,
-    SubscriptionBundle,
-)
-from core.pagination import paginate_queryset
+from django.contrib.auth import login, logout
+from adminpanel.forms import OrderForm, ProductForm, InventoryForm, SubscriptionBundleForm, BundleItemForm, BundleItemFormSet, ReviewForm, AdminLoginForm
+<<<<<<< HEAD
+from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription
+from django.db import models, transaction
+from django.db.models import Q, Count
+=======
+from core.models import Order, Product, Category, CustomerProfile, SubscriptionBundle, BundleItem, Review, CustomerSubscription, OrderItem
+from django.db import models
+from django.db.models import Q, Count, F, Sum
+>>>>>>> origin/main
+from django.db.models.functions import Coalesce
 from core.services import advance_subscription_delivery
+from core.currency import RATES as CURRENCY_RATES, get_selected_currency
+from django.views.decorators.http import require_POST
+<<<<<<< HEAD
+from adminpanel.decorators import staff_required
+
+
+=======
 from .decorators import staff_required
+from django.db.models.functions import Coalesce, TruncMonth
+from core.forecasting import get_restock_predictions
+from core.pagination import paginate_queryset
+
+
+
+>>>>>>> origin/main
 @staff_required
 def product_list(request):
     products = Product.objects.all().order_by('id')
@@ -78,6 +73,10 @@ def product_list(request):
     return render(request, 'adminpanel/product_list.html', context)
 
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
 @staff_required
 def product_add(request):
     selected_currency = get_selected_currency(request)
@@ -117,6 +116,10 @@ def product_add(request):
         "adminpanel/product_form.html",
         context
     )
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 @staff_required
 def product_update(request, product_id):
     product = Product.objects.get(id=product_id)
@@ -207,6 +210,10 @@ def inventory_list(request):
     return render(request, 'adminpanel/inventory_list.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 def inventory_update(request, product_id):
     product = Product.objects.get(id=product_id)
 
@@ -227,6 +234,10 @@ def inventory_update(request, product_id):
     return render(request, 'adminpanel/inventory_form.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 def order_list(request):
     delivery_statuses = Order.DELIVERY_STATUS
     orders = Order.objects.all().order_by("-created_at")
@@ -278,6 +289,10 @@ def order_list(request):
     return render(request, 'adminpanel/order_list.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 def order_update(request, order_id):
     order = Order.objects.prefetch_related("items__product").get(id=order_id)
 
@@ -385,6 +400,10 @@ def customer_list(request):
     return render(request, "adminpanel/customer_list.html", context)
 
 @staff_required
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 def customer_view (request, customer_id):
     selected_currency = get_selected_currency(request)
 
@@ -413,6 +432,8 @@ def customer_view (request, customer_id):
         'currency': selected_currency,
     }
     return render(request, 'adminpanel/customer_view.html', context)
+@staff_required
+
 @staff_required
 def subscription_bundle_list(request):
     selected_currency = get_selected_currency(request)
@@ -456,6 +477,10 @@ def subscription_bundle_list(request):
     return render(request, 'adminpanel/subscription_bundle_list.html', context)
 
 @staff_required
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 def subscription_bundle_update(request, subscription_bundle_id):
     selected_currency = get_selected_currency(request)
     if selected_currency not in CURRENCY_RATES:
@@ -507,6 +532,10 @@ def subscription_bundle_update(request, subscription_bundle_id):
     }
     return render(request, "adminpanel/subscription_bundle_form.html", context)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
 @staff_required
 def subscription_bundle_add(request):
     selected_currency = get_selected_currency(request)
@@ -551,6 +580,10 @@ def subscription_bundle_add(request):
     return render(request, "adminpanel/subscription_bundle_form.html", context)
 
 @staff_required
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 def review_list(request):
     reviews = Review.objects.all().order_by('rating')
     search_query = request.GET.get("search", "").strip()
