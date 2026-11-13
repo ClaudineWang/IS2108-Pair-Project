@@ -6,7 +6,7 @@ import pandas as pd
 
 MODEL_PATH = (
     Path(settings.BASE_DIR)
-    / "core"
+    / "adminpanel"
     / "ml_models"
     / "demand_model.joblib"
 )

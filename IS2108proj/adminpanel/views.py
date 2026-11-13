@@ -10,7 +10,7 @@ from core.services import advance_subscription_delivery
 from core.currency import RATES as CURRENCY_RATES, get_selected_currency
 from django.views.decorators.http import require_POST
 from .decorators import staff_required
-from core.forecasting import get_restock_predictions
+from .forecasting import get_restock_predictions
 from core.pagination import paginate_queryset
 @staff_required
 def product_list(request):
