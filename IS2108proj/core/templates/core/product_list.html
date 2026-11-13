@@ -1,4 +1,5 @@
 {% extends "customer/base_customer.html" %}
+{% load currency_tags %}
 {% block title %}Shop | BrewMatch{% endblock %}
 {% block extra_head %}
     <style>
@@ -103,7 +104,7 @@
         .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
         .section-heading h2 { margin: 0; font-size: 1.3rem; }
         .result-count { color: var(--muted); font-size: .9rem; }
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
         .product-card, .bundle-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: white; text-decoration: none; }
         .product-card:hover, .bundle-card:hover { border-color: var(--coffee); transform: translateY(-1px); }
         .card-image, .image-placeholder { display: grid; width: 100%; height: 165px; place-items: center; background: var(--cream); color: #94785f; font-size: 2.5rem; object-fit: cover; }
@@ -113,6 +114,12 @@
         .card-content p { margin: 5px 0; color: var(--muted); font-size: .9rem; line-height: 1.45; }
         .card-content .price { color: var(--coffee-dark); font-size: 1rem; font-weight: 700; }
         .empty-state { padding: 18px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); line-height: 1.5; }
+        .catalogue-pagination { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 18px; }
+        .catalogue-pagination a { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; padding: 8px 16px; border: 1px solid var(--coffee); border-radius: 999px; background: var(--coffee); color: white; text-decoration: none; }
+        .catalogue-pagination a:hover { background: var(--coffee-dark); }
+        .catalogue-pagination .previous { justify-self: start; }
+        .catalogue-pagination .next { justify-self: end; }
+        .catalogue-page-count { color: var(--muted); font-size: .9rem; }
         @media (max-width: 720px) {
             .topbar { padding: 12px 16px; }
             .brand-name { display: none; }
@@ -185,11 +192,11 @@
                             </div>
                             <div class="filter-field">
                                 <label for="min_price">Minimum price</label>
-                                <input id="min_price" type="number" min="0" step="0.01" name="min_price" value="{{ min_price }}" placeholder="$0.00">
+                                <input id="min_price" type="number" min="0" step="0.01" name="min_price" value="{{ min_price }}" placeholder="{{ selected_currency }} 0.00">
                             </div>
                             <div class="filter-field">
                                 <label for="max_price">Maximum price</label>
-                                <input id="max_price" type="number" min="0" step="0.01" name="max_price" value="{{ max_price }}" placeholder="No limit">
+                                <input id="max_price" type="number" min="0" step="0.01" name="max_price" value="{{ max_price }}" placeholder="{{ selected_currency }} max">
                             </div>
                             <div class="filter-actions">
                                 <button class="search-button" type="submit">Apply filters</button>
@@ -204,7 +211,7 @@
             <section class="catalogue-section" aria-labelledby="products-heading">
                 <div class="section-heading">
                     <h2 id="products-heading">Products</h2>
-                    <span class="result-count">{{ products|length }} result{{ products|length|pluralize }}</span>
+                    <span class="result-count">{{ products.paginator.count }} result{{ products.paginator.count|pluralize }}</span>
                 </div>
                 {% if products %}
                     <div class="card-grid">
@@ -220,11 +227,26 @@
                                     <p>{{ product.category.get_name_display }} · {{ product.get_roast_level_display }} roast</p>
                                     {% if product.origin_country %}<p>Origin: {{ product.origin_country }}</p>{% endif %}
                                     <p>{{ product.description|default:product.tasting_notes|default:"Freshly roasted coffee."|truncatewords:14 }}</p>
-                                    <p class="price">${{ product.price }}</p>
+                                    <p class="price">{{ selected_currency }} {{ product.price|currency_amount:currency_rate|floatformat:2 }}</p>
                                 </div>
                             </a>
                         {% endfor %}
                     </div>
+                    {% if products.has_other_pages %}
+                        <nav class="catalogue-pagination" aria-label="Product pages">
+                            {% if products.has_previous %}
+                                <a class="previous" href="?page={{ products.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}#products-heading">Previous</a>
+                            {% else %}
+                                <span></span>
+                            {% endif %}
+                            <span class="catalogue-page-count">Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
+                            {% if products.has_next %}
+                                <a class="next" href="?page={{ products.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}#products-heading">Next</a>
+                            {% else %}
+                                <span></span>
+                            {% endif %}
+                        </nav>
+                    {% endif %}
                 {% else %}
                     <div class="empty-state">
                         <p>No coffees match the current search and filter combination. Try removing a filter or clearing your search and filters.</p>
@@ -256,7 +278,7 @@
                                 <div class="card-content">
                                     <h3>{{ bundle.name }}</h3>
                                     <p>{{ bundle.description|default:"A curated coffee bundle."|truncatewords:16 }}</p>
-                                    <p class="price">${{ bundle.price_per_delivery }} / {{ bundle.get_billing_frequency_display|lower }}</p>
+                                    <p class="price">{{ selected_currency }} {{ bundle.price_per_delivery|currency_amount:currency_rate|floatformat:2 }} / {{ bundle.get_billing_frequency_display|lower }}</p>
                                     <p>{{ bundle.total_items }} item{{ bundle.total_items|pluralize }} per delivery</p>
                                 </div>
                             </a>

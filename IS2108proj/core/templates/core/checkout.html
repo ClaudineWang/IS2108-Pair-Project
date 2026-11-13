@@ -1,4 +1,5 @@
 {% extends "customer/base_customer.html" %}
+{% load currency_tags %}
 {% block title %}Checkout | BrewMatch{% endblock %}
 {% block extra_head %}
     <style>
@@ -152,15 +153,15 @@
                         <div>
                             <ul class="order-summary">
                                 {% for item in cart_items %}
-                                    <li><span>{{ item.product.name }} × {{ item.quantity }}</span><span>${{ item.subtotal|floatformat:2 }}</span></li>
+                                    <li><span>{{ item.product.name }} × {{ item.quantity }}</span><span>{{ selected_currency }} {{ item.subtotal|currency_amount:currency_rate|floatformat:2 }}</span></li>
                                 {% empty %}
                                     <li class="empty-summary">Your cart is empty.</li>
                                 {% endfor %}
                             </ul>
                             <ul class="order-summary summary-totals">
-                                <li><span>Subtotal</span><span>${{ subtotal|floatformat:2 }}</span></li>
-                                <li><span>Delivery fee</span><span>${{ delivery_fee|floatformat:2 }}</span></li>
-                                <li class="grand-total"><span>Total</span><span>${{ total|floatformat:2 }}</span></li>
+                                <li><span>Subtotal</span><span>{{ selected_currency }} {{ subtotal|currency_amount:currency_rate|floatformat:2 }}</span></li>
+                                <li><span>Delivery fee</span><span>{{ selected_currency }} {{ delivery_fee|currency_amount:currency_rate|floatformat:2 }}</span></li>
+                                <li class="grand-total"><span>Total</span><span>{{ selected_currency }} {{ total|currency_amount:currency_rate|floatformat:2 }}</span></li>
                             </ul>
                         </div>
                     </div>

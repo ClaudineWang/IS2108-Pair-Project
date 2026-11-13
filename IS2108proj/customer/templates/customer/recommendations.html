@@ -1,4 +1,5 @@
 {% extends "customer/base_customer.html" %}
+{% load currency_tags %}
 {% block title %}My Recommendations | BrewMatch{% endblock %}
 {% block extra_head %}
 <style>
@@ -339,6 +340,42 @@
         <a href="{% url 'core:product_detail' product.id %}" aria-label="View {{ product.name }}">
             {% if product.image %}
             <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+            <h1>Your Personalised Coffee Recommendations</h1>
+            <p class="explanation">
+                You selected <strong>{{ recommendation_category.get_name_display }}</strong> as your coffee format,
+                prefer <strong>{{ latest_response.get_preferred_flavour_display }}</strong> notes, and brew with
+                <strong>{{ latest_response.get_preferred_brewing_method_display }}</strong>.
+                Our model predicts that a
+                <strong>{{ latest_response.get_predicted_roast_display|default:latest_response.get_preferred_roast_display }} roast</strong>
+                may suit your taste. We show in-stock coffees in your selected format, ranked by roast, caffeine, and tasting-note matches.
+            </p>
+
+            <h2 class="results-heading">Showing {{ recommended_products|length }} matching product{{ recommended_products|pluralize }}:</h2>
+            {% if recommended_products %}
+                <div class="product-grid">
+                    {% for product in recommended_products %}
+                        <article class="product-card">
+                            <a href="{% url 'core:product_detail' product.id %}" aria-label="View {{ product.name }}">
+                                {% if product.image %}
+                                    <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                {% else %}
+                                    <span class="image-placeholder" aria-hidden="true">☕</span>
+                                {% endif %}
+                            </a>
+                            <a class="product-name" href="{% url 'core:product_detail' product.id %}">{{ product.name }}</a>
+                            <p class="product-meta">Origin: {{ product.origin_country|default:"Not specified" }}</p>
+                            <p class="product-meta">{{ product.get_roast_level_display }} Roast · {{ product.get_caffeine_type_display }}</p>
+                            <p class="product-meta tasting-notes">{{ product.tasting_notes|default:product.description|default:"Freshly roasted coffee."|truncatewords:12 }}</p>
+                            <p class="recommendation-reason"><strong>Why this coffee?</strong> {{ product.recommendation_reason }}</p>
+                            <p class="price">{{ selected_currency }} {{ product.price|currency_amount:currency_rate|floatformat:2 }}</p>
+                            <form class="add-form" method="post" action="{% url 'core:add_to_cart' product.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="quantity" value="1">
+                                <button class="add-button" type="submit">Add to Cart</button>
+                            </form>
+                        </article>
+                    {% endfor %}
+                </div>
             {% else %}
             <span class="image-placeholder" aria-hidden="true">☕</span>
             {% endif %}

@@ -5,12 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BrewMatch{% endblock %}</title>
     <style>
+        :root {
+            --ink: #282520;
+            --muted: #716b62;
+            --line: #ded8ce;
+            --paper: #fffefa;
+            --cream: #f7f3eb;
+            --coffee: #70452f;
+            --coffee-dark: #4b3023;
+            --accent: #e7d4be;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            background: #f5f5f5;
-            color: #222;
+            background: var(--paper);
+            color: var(--ink);
+            line-height: 1.5;
         }
+
+        button, input, select, textarea { font: inherit; }
 
         .container {
             max-width: 1200px;
@@ -23,9 +39,9 @@
             justify-content: space-between;
             align-items: center;
             padding: 16px 0;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--line);
             margin-bottom: 24px;
-            background: #bea989;
+            background: var(--coffee);
             color: white;
             padding-left: 24px;
             padding-right: 24px;
@@ -57,13 +73,13 @@
 
         input, select, button {
             padding: 8px 10px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--line);
             border-radius: 6px;
             font-size: 14px;
         }
 
         button {
-            background: #bea989;
+            background: var(--coffee);
             color: white;
             border: none;
             cursor: pointer;
@@ -79,11 +95,11 @@
         th, td {
             padding: 10px 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--line);
         }
 
         th {
-            background: #f2f2f2;
+            background: var(--cream);
         }
 
         .status-visible {
@@ -101,7 +117,7 @@
         }
 
         a {
-            color: #1d4ed8;
+            color: var(--coffee-dark);
             text-decoration: none;
         }
 

@@ -10,7 +10,7 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    border: 1px solid #d6dce3;
+    border: 1px solid var(--line);
     border-radius: 8px;
     overflow: hidden;
     background: white;
@@ -21,11 +21,11 @@
     td {
         padding: 8px;
         text-align: left;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid var(--line);
     }
 
     th {
-        background-color: #f2f2f2;
+        background-color: var(--cream);
     }
 
     .status-visible {
@@ -46,7 +46,7 @@
 
         {% for category in categories %}
         <option value="{{ category.id }}" {% if category_filter == category.id|stringformat:"s" %} selected {% endif %}>
-            {{ category.name }}
+            {{ category.get_name_display }}
         </option>
         {% endfor %}
     </select>
@@ -91,7 +91,7 @@
         <tr>
             <td>{{ product.id }}</td>
             <td>{{ product.name }}</td>
-            <td>{{ product.category.name }}</td>
+            <td>{{ product.category.get_name_display }}</td>
             <td>{{ product.stock_level }}</td>
             <td>{{ product.stock_status }}</td>
             <td>

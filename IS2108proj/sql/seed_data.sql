@@ -52,7 +52,7 @@ INSERT INTO core_product (
     (1, 'Ethiopia Yirgacheffe',
         'Bright single-origin beans with a floral finish.', 18.50,
         'Jasmine, citrus, honey', 'caffeinated', 'light', 'Ethiopia',
-        7, 10, 1, NULL, '2026-01-08 09:00:00', 1),
+        7, 10, 1, 'product_images/ethiopian-yirgacheffe-coffee-pumphreys-.jpg', '2026-01-08 09:00:00', 1),
     (2, 'Colombia Supremo',
         'Balanced beans with a smooth everyday profile.', 16.00,
         'Caramel, red apple, cocoa', 'caffeinated', 'medium', 'Colombia',
@@ -203,19 +203,19 @@ INSERT INTO core_orderitem (id, quantity, price_at_purchase, order_id, product_i
     (23, 1, 18.50, 18, 1);
 
 INSERT INTO core_questionnaireresponse (
-    id, preferred_roast, preferred_flavour, preferred_brewing_method,
-    preferred_caffeine_type, predicted_category_id, created_at,
+    id, preferred_roast, predicted_roast, preferred_flavour,
+    preferred_brewing_method, preferred_caffeine_type, created_at,
     customer_id, preferred_category_id
 ) VALUES
-    (1, 'light', 'floral', 'pour_over', 'caffeinated', 1, '2026-02-02 10:00:00',
+    (1, 'light', '', 'floral', 'pour_over', 'caffeinated', '2026-02-02 10:00:00',
         (SELECT id FROM auth_user WHERE username = 'seed_alice'), 1),
-    (2, 'medium', 'nutty', 'filter', 'caffeinated', 2, '2026-02-17 10:00:00',
+    (2, 'medium', '', 'nutty', 'filter', 'caffeinated', '2026-02-17 10:00:00',
         (SELECT id FROM auth_user WHERE username = 'seed_ben'), 2),
-    (3, 'dark', 'chocolatey', 'espresso', 'caffeinated', 1, '2026-03-11 10:00:00',
+    (3, 'dark', '', 'chocolatey', 'espresso', 'caffeinated', '2026-03-11 10:00:00',
         (SELECT id FROM auth_user WHERE username = 'seed_carol'), 1),
-    (4, 'dark', 'chocolatey', 'french_press', 'decaf', 2, '2026-04-07 10:00:00',
+    (4, 'dark', '', 'chocolatey', 'french_press', 'decaf', '2026-04-07 10:00:00',
         (SELECT id FROM auth_user WHERE username = 'seed_dylan'), 2),
-    (5, 'medium', 'fruity', 'filter', 'caffeinated', 4, '2026-05-18 10:00:00',
+    (5, 'medium', '', 'fruity', 'filter', 'caffeinated', '2026-05-18 10:00:00',
         (SELECT id FROM auth_user WHERE username = 'seed_emma'), 4);
 
 INSERT INTO core_review (
@@ -228,7 +228,7 @@ INSERT INTO core_review (
     (5, 5, 'Very convenient and surprisingly fresh.', '2026-05-24 12:00:00', 5, 8, 1),
     (6, 4, 'Comforting chocolate notes.', '2026-06-25 12:00:00', 1, 7, 1),
     (7, 5, 'My favourite everyday blend.', '2026-08-10 12:00:00', 2, 4, 1),
-    (8, 4, 'Great value in the subscription bundle.', '2026-09-18 12:00:00', 3, 10, 1);
+    (8, 4, 'Great value in the subscription bundle.', '2026-09-18 12:00:00', 2, 10, 1);
 
 INSERT INTO core_cart (id, created_at, updated_at, customer_id) VALUES
     (1, '2026-11-01 09:00:00', '2026-11-05 10:00:00',

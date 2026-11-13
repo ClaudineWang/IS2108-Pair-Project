@@ -10,7 +10,7 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    border: 1px solid #d6dce3;
+    border: 1px solid var(--line);
     border-radius: 8px;
     overflow: hidden;
     background: white;
@@ -21,14 +21,45 @@
     td {
         padding: 8px;
         text-align: left;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid var(--line);
     }
 
     th {
-        background-color: #f2f2f2;
+        background-color: var(--cream);
+    }
+
+    .order-search-form {
+        display: grid;
+        grid-template-columns: minmax(300px, 2fr) minmax(180px, 1fr) minmax(150px, .9fr) minmax(170px, 1fr) auto auto;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .order-search-form input[name="search"] {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .order-search-form .reset-link {
+        justify-self: end;
+        white-space: nowrap;
+    }
+
+    .order-search-form .search-submit { white-space: nowrap; }
+
+    @media (max-width: 1000px) {
+        .order-search-form { grid-template-columns: repeat(3, minmax(0, 1fr)) auto auto; }
+        .order-search-form input[name="search"] { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 560px) {
+        .order-search-form { grid-template-columns: minmax(0, 1fr); }
+        .order-search-form input[name="search"] { grid-column: 1; }
+        .order-search-form .reset-link { justify-self: end; }
     }
 </style>
-<form method="get">
+<form method="get" class="order-search-form">
     <input type="text" name="search" placeholder="Search by Order ID or Customer Name" value="{{ search_query }}">
 
     <select name="delivery_status">
@@ -55,9 +86,9 @@
     </select>
 
 
-    <button type="submit">Search</button>
+    <button class="search-submit" type="submit">Search</button>
 
-    <a href="{% url 'adminpanel:order_list' %}">
+    <a class="reset-link" href="{% url 'adminpanel:order_list' %}">
         Reset
     </a>
 </form>

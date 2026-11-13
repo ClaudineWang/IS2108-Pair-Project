@@ -99,6 +99,17 @@ class AdminPanelAccessTests(TestCase):
                     f"{reverse('adminpanel:admin_login')}?next={url}",
                 )
 
+    def test_inventory_pages_show_category_display_label(self):
+        self.client.force_login(self.staff_user)
+
+        inventory_response = self.client.get(reverse("adminpanel:inventory_list"))
+        detail_response = self.client.get(
+            reverse("adminpanel:inventory_update", args=[self.product.id])
+        )
+
+        self.assertContains(inventory_response, "Whole Bean Coffee")
+        self.assertContains(detail_response, "Whole Bean Coffee")
+
         self.client.force_login(self.customer_user)
         for url in self.management_urls:
             with self.subTest(url=url, user="customer"):
