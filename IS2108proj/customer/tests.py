@@ -161,13 +161,16 @@ class CustomerHomeTests(TestCase):
         products = list(response.context["recommended_products"])
         self.assertEqual(products[0], self.product)
 
-    def test_recommendations_page_redirects_to_quiz_if_no_answers(self):
+    def test_recommendations_page_explains_quiz_is_needed_if_no_answers(self):
         QuestionnaireResponse.objects.filter(customer=self.user).delete()
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("customer:recommendations"))
 
-        self.assertRedirects(response, reverse("customer:customer_questionnaire"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Complete the coffee quiz first")
+        self.assertContains(response, "Take the coffee quiz")
+        self.assertNotContains(response, "Your Personalised Coffee Recommendations")
 
     def test_quiz_submission_saves_preferences_and_redirects_home(self):
         self.client.force_login(self.user)

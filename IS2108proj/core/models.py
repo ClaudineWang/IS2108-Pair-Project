@@ -89,26 +89,15 @@ class CustomerSubscription(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('paused', 'Paused'),
-        ('cancelled', 'Cancelled'),
-        ('expired', 'Expired')
+        ('cancelled', 'Cancelled')
 
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='subscriptions')
     bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.PROTECT, related_name='customer_subscriptions')
     start_date = models.DateTimeField(auto_now_add=True)
-    end_date = models.DateTimeField(null=True, blank=True)
     next_delivery_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    class Meta:
-        constraints = [
-        models.CheckConstraint(
-            condition=(
-                Q(end_date__isnull=True) |
-                Q(end_date__gte=F("start_date"))
-            ),
-            name="end_date_after_start_date",
-        ),
-    ]
+
 
     def __str__(self):
         return f"{self.customer.user.username} - {self.bundle.name} ({self.status})"

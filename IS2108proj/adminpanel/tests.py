@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 
 from core.models import (
     Category,
@@ -88,6 +89,7 @@ class AdminPanelAccessTests(TestCase):
                 "adminpanel:customer_subscription_view",
                 args=[self.subscription.id],
             ),
+            reverse("adminpanel:predictions")
         ]
 
     def test_management_views_redirect_anonymous_and_non_staff_users(self):
@@ -190,3 +192,25 @@ class AdminPanelAccessTests(TestCase):
         )
         self.product.refresh_from_db()
         self.assertEqual(self.product.stock_level, 3)
+
+    def test_staff_can_view_predictions(self):
+        self.client.force_login(self.staff_user)
+        fake_predictions = [
+            {
+            "product_name": "Test Coffee",
+            "current_stock": 3,
+            "predicted_demand": 10,
+            "suggested_restock": 7,
+            "stock_status": "Low in Stock",
+            }
+        ]
+        with patch(
+        "adminpanel.views.get_restock_predictions",
+        return_value=fake_predictions,
+        ):
+            response = self.client.get(
+                reverse("adminpanel:predictions")
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Coffee")
+        self.assertContains(response, "7 units")
