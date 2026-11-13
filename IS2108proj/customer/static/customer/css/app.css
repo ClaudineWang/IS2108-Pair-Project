@@ -74,17 +74,17 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 
 .top-actions .currency-switcher { gap: 6px; }
-.currency-switcher select,
-.currency-switcher button {
+.currency-switcher select {
     min-height: 42px;
     padding: 8px 12px;
-    border: 1px solid var(--ink);
+    border: 1px solid var(--coffee);
     border-radius: 999px;
+    background: var(--accent);
+    color: var(--coffee-dark);
+    font-weight: 600;
     font: inherit;
+    cursor: pointer;
 }
-.currency-switcher select { background: white; color: var(--ink); }
-.currency-switcher button { background: var(--coffee); color: white; cursor: pointer; }
-.currency-switcher button:hover { background: var(--coffee-dark); }
 .visually-hidden {
     position: absolute;
     width: 1px;
@@ -265,7 +265,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
     .topbar { gap: 8px; }
     .top-actions { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .pill-link, .logout-button { min-height: 38px; padding: 7px 12px; font-size: .9rem; }
-    .currency-switcher select, .currency-switcher button { min-height: 38px; padding: 7px 9px; font-size: .9rem; }
+    .currency-switcher select { min-height: 38px; padding: 7px 9px; font-size: .9rem; }
     .side-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

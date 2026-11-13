@@ -418,6 +418,8 @@ class ProductListTests(TestCase):
         self.assertEqual(response.context["selected_currency"], "USD")
         self.assertContains(response, "USD 13.69")
         self.assertContains(response, 'id="customer-currency"')
+        self.assertContains(response, 'this.form.requestSubmit()')
+        self.assertNotContains(response, ">Apply</button>")
         self.assertEqual(self.client.session["currency"], "USD")
 
         next_response = self.client.get(shop_url)

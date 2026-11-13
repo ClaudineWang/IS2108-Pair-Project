@@ -25,7 +25,6 @@
                     <option value="USD" {% if selected_currency == "USD" %}selected{% endif %}>USD</option>
                     <option value="EUR" {% if selected_currency == "EUR" %}selected{% endif %}>EUR</option>
                 </select>
-                <button type="submit">Apply</button>
             </form>
             <a class="pill-link{% if request.resolver_match.url_name == 'cart' or request.resolver_match.url_name == 'checkout' %} active{% endif %}" href="{% url 'core:cart' %}"{% if request.resolver_match.url_name == 'cart' or request.resolver_match.url_name == 'checkout' %} aria-current="page"{% endif %}>
                 My Cart <span aria-hidden="true">🛒</span>{% if cart_count %} ({{ cart_count }}){% endif %}
@@ -62,5 +61,10 @@
             {% block content %}{% endblock %}
         </main>
     </div>
+    <script>
+        document.getElementById("customer-currency").addEventListener("change", function () {
+            this.form.requestSubmit();
+        });
+    </script>
 </body>
 </html>
