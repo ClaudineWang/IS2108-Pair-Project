@@ -256,6 +256,7 @@ def customer_profile(request):
     active_subscriptions = (
         CustomerSubscription.objects.filter(customer=profile, status="active")
         .select_related("bundle")
+        .prefetch_related("bundle__bundle_items__product")
         .order_by("bundle__name")
     )
     cart_count = 0

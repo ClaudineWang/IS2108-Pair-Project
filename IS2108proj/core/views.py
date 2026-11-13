@@ -7,6 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db import transaction
 from django.db.models import Q
 from .forms import CheckoutForm, CustomerReviewForm
+from .currency import RATES, get_selected_currency
 from .models import (
     Product,
     Category,
@@ -18,11 +19,14 @@ from .models import (
     Review,
     SubscriptionBundle,
 )
+from .pagination import paginate_queryset
 from .services import InsufficientStockError, place_order_from_cart
 
 
 def product_list(request):
     """Displays searchable products and active subscription bundles."""
+    selected_currency = get_selected_currency(request)
+    currency_rate = RATES[selected_currency]
     search_query = request.GET.get("q", "").strip()
     category_id = request.GET.get("category", "").strip()
     roast_level = request.GET.get("roast_level", "").strip()
@@ -56,7 +60,7 @@ def product_list(request):
             min_price_value = Decimal(min_price)
             if not min_price_value.is_finite() or min_price_value < 0:
                 raise InvalidOperation
-            products = products.filter(price__gte=min_price_value)
+            products = products.filter(price__gte=min_price_value / currency_rate)
         except (InvalidOperation, ValueError):
             filter_errors.append("Enter a valid minimum price.")
     if max_price:
@@ -64,9 +68,11 @@ def product_list(request):
             max_price_value = Decimal(max_price)
             if not max_price_value.is_finite() or max_price_value < 0:
                 raise InvalidOperation
-            products = products.filter(price__lte=max_price_value)
+            products = products.filter(price__lte=max_price_value / currency_rate)
         except (InvalidOperation, ValueError):
             filter_errors.append("Enter a valid maximum price.")
+
+    product_page, query_string = paginate_queryset(request, products, per_page=10)
 
     subscription_bundles = SubscriptionBundle.objects.filter(
         is_active=True
@@ -83,7 +89,8 @@ def product_list(request):
             cart_count = sum(item.quantity for item in cart.items.all())
 
     context = {
-        "products": products,
+        "products": product_page,
+        "query_string": query_string,
         "subscription_bundles": subscription_bundles,
         "categories": Category.objects.all().order_by("name"),
         "roast_levels": Product.ROAST_LEVEL,

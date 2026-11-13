@@ -1,4 +1,5 @@
 {% extends "customer/base_customer.html" %}
+{% load currency_tags %}
 {% block title %}My Recommendations | BrewMatch{% endblock %}
 {% block extra_head %}
     <style>
@@ -235,7 +236,7 @@
                             <p class="product-meta">{{ product.get_roast_level_display }} Roast · {{ product.get_caffeine_type_display }}</p>
                             <p class="product-meta tasting-notes">{{ product.tasting_notes|default:product.description|default:"Freshly roasted coffee."|truncatewords:12 }}</p>
                             <p class="recommendation-reason"><strong>Why this coffee?</strong> {{ product.recommendation_reason }}</p>
-                            <p class="price">${{ product.price }}</p>
+                            <p class="price">{{ selected_currency }} {{ product.price|currency_amount:currency_rate|floatformat:2 }}</p>
                             <form class="add-form" method="post" action="{% url 'core:add_to_cart' product.id %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="quantity" value="1">

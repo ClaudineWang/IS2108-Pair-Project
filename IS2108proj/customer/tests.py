@@ -573,6 +573,15 @@ class CustomerProfileTests(TestCase):
         self.assertContains(response, self.user.email)
         self.assertContains(response, self.profile.phone_number)
         self.assertContains(response, self.active_bundle.name)
+        self.assertContains(response, 'aria-labelledby="active-subscriptions-heading"')
+        self.assertContains(response, "bundle-card")
+        self.assertContains(response, "Cancel subscription")
+        subscription = CustomerSubscription.objects.get(
+            customer=self.profile,
+            bundle=self.active_bundle,
+        )
+        cancel_url = reverse("bundles:cancel", args=[subscription.id])
+        self.assertContains(response, f'action="{cancel_url}"')
         self.assertNotContains(response, self.cancelled_bundle.name)
         self.assertNotContains(response, "profile-test-password")
         self.assertNotContains(response, self.user.password)

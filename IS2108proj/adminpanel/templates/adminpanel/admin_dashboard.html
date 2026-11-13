@@ -16,12 +16,12 @@
     .dashboard-heading h1 {
         font-size: 32px;
         font-weight: 800;
-        color: #17324d;
+        color: var(--coffee-dark);
         margin-bottom: 6px;
     }
 
     .dashboard-heading p {
-        color: #64748b;
+        color: var(--muted);
         margin: 0;
     }
 
@@ -36,7 +36,7 @@
         background: white;
         border-radius: 12px;
         padding: 20px;
-        border-left: 5px solid #2563eb;
+        border-left: 5px solid var(--coffee);
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
     }
 
@@ -54,14 +54,14 @@
 
     .metric-card h3 {
         margin: 0 0 10px;
-        color: #64748b;
+        color: var(--muted);
         font-size: 14px;
         text-transform: uppercase;
     }
 
     .metric-card strong {
         font-size: 28px;
-        color: #17324d;
+        color: var(--coffee-dark);
     }
 
     .chart-grid {
@@ -80,7 +80,7 @@
 
     .dashboard-card h2 {
         margin-top: 0;
-        color: #17324d;
+        color: var(--coffee-dark);
         font-size: 20px;
     }
 
@@ -99,12 +99,12 @@
     }
 
     .status-low {
-        color: #ea580c;
+        color: #a45b20;
         font-weight: bold;
     }
 
     .status-out {
-        color: #dc2626;
+        color: #9a3e32;
         font-weight: bold;
     }
 
@@ -288,7 +288,7 @@
                     data: topProducts.map(
                         item => Number(item.total_quantity)
                     ),
-                    backgroundColor: "#2563eb"
+                    backgroundColor: "#70452f"
                 }]
             },
             options: {
@@ -328,10 +328,10 @@
                         item => Number(item.active_subscriptions)
                     ),
                     backgroundColor: [
-                        "#2563eb",
+                        "#70452f",
                         "#16a34a",
                         "#f97316",
-                        "#7c3aed",
+                        "#e7d4be",
                         "#dc2626"
                     ],
                     borderRadius: 6

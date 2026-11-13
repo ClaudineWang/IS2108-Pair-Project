@@ -15,6 +15,18 @@
             <span class="brand-name">BrewMatch</span>
         </a>
         <div class="top-actions">
+            <form class="currency-switcher" method="get" action="{{ request.path }}">
+                {% for key, value in request.GET.items %}
+                    {% if key != "currency" %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+                {% endfor %}
+                <label class="visually-hidden" for="customer-currency">Currency</label>
+                <select id="customer-currency" name="currency" aria-label="Currency">
+                    <option value="SGD" {% if selected_currency == "SGD" %}selected{% endif %}>SGD</option>
+                    <option value="USD" {% if selected_currency == "USD" %}selected{% endif %}>USD</option>
+                    <option value="EUR" {% if selected_currency == "EUR" %}selected{% endif %}>EUR</option>
+                </select>
+                <button type="submit">Apply</button>
+            </form>
             <a class="pill-link{% if request.resolver_match.url_name == 'cart' or request.resolver_match.url_name == 'checkout' %} active{% endif %}" href="{% url 'core:cart' %}"{% if request.resolver_match.url_name == 'cart' or request.resolver_match.url_name == 'checkout' %} aria-current="page"{% endif %}>
                 My Cart <span aria-hidden="true">🛒</span>{% if cart_count %} ({{ cart_count }}){% endif %}
             </a>

@@ -6,11 +6,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Admin Panel{% endblock %}</title>
     <style>
+        :root {
+            --ink: #282520;
+            --muted: #716b62;
+            --line: #ded8ce;
+            --paper: #fffefa;
+            --cream: #f7f3eb;
+            --coffee: #70452f;
+            --coffee-dark: #4b3023;
+            --accent: #e7d4be;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
+            min-width: 320px;
             font-family: Arial, sans-serif;
             margin: 0;
-            background: #f5f5f5;
-            color: #222;
+            background: var(--paper);
+            color: var(--ink);
+            line-height: 1.5;
+        }
+
+        button, input, select, textarea { font: inherit; }
+
+        input, select, textarea {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: white;
+            color: var(--ink);
+        }
+
+        .content-panel button:not(.delete-button):not(.logout-button) {
+            border: 1px solid var(--coffee);
+            border-radius: 999px;
+            background: var(--coffee);
+            color: white;
+            cursor: pointer;
+        }
+
+        .content-panel button:not(.delete-button):not(.logout-button):hover {
+            background: var(--coffee-dark);
         }
 
         .container {
@@ -20,7 +56,7 @@
         }
 
         .admin-header {
-            background: #bea989;
+            background: var(--coffee);
             color: white;
             padding: 18px 22px;
             border-radius: 12px;
@@ -57,7 +93,7 @@
         }
 
         .nav-link {
-            color: #e5eef7;
+            color: var(--cream);
             text-decoration: none;
             padding: 9px 13px;
             border-radius: 7px;
@@ -68,7 +104,7 @@
         .nav-link:hover,
         .nav-link.active {
             background: white;
-            color: #17324d;
+            color: var(--coffee-dark);
             text-decoration: none;
         }
 
@@ -98,8 +134,18 @@
 
         .logout-button:hover {
             background: white;
-            color: #17324d;
+            color: var(--coffee-dark);
         }
+
+        .content-panel {
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .content-panel a { color: var(--coffee-dark); }
+        .content-panel h1, .content-panel h2, .content-panel h3 { color: var(--coffee-dark); }
 
         @media (max-width: 700px) {
             .main-nav {
@@ -116,13 +162,7 @@
                 justify-content: space-between;
             }
 
-            .content-panel {
-                background: white;
-                border: 1px solid #d6dce3;
-                border-radius: 12px;
-                padding: 24px;
-                box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-            }
+            .content-panel { padding: 20px; }
         }
     </style>
     {% block extra_head %}{% endblock %}

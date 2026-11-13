@@ -41,9 +41,9 @@ class CartPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.product.name)
-        self.assertContains(response, "$20.50")
-        self.assertContains(response, "$5.00")
-        self.assertContains(response, "$25.50")
+        self.assertContains(response, "SGD 20.50")
+        self.assertContains(response, "SGD 5.00")
+        self.assertContains(response, "SGD 25.50")
         self.assertContains(response, "Proceed to Checkout")
 
     def test_checkout_uses_same_decimal_delivery_total(self):
@@ -52,8 +52,8 @@ class CartPageTests(TestCase):
         response = self.client.get(reverse("core:checkout"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "$5.00")
-        self.assertContains(response, "$25.50")
+        self.assertContains(response, "SGD 5.00")
+        self.assertContains(response, "SGD 25.50")
         self.assertContains(response, "Order summary review:")
         self.assertContains(response, "Contact Number:")
         self.assertContains(response, "Payment Confirmation:")
@@ -408,6 +408,47 @@ class ProductListTests(TestCase):
         self.assertContains(response, reverse("customer:customer_profile"))
         self.assertNotContains(response, self.hidden_product.name)
         self.assertNotContains(response, self.inactive_bundle.name)
+
+    def test_customer_currency_switch_converts_prices_and_persists(self):
+        shop_url = reverse("core:product_list")
+
+        response = self.client.get(shop_url, {"currency": "USD"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_currency"], "USD")
+        self.assertContains(response, "USD 13.69")
+        self.assertContains(response, 'id="customer-currency"')
+        self.assertEqual(self.client.session["currency"], "USD")
+
+        next_response = self.client.get(shop_url)
+        self.assertContains(next_response, "USD 13.69")
+
+    def test_shop_paginates_filtered_products_and_preserves_filters(self):
+        Product.objects.bulk_create([
+            Product(
+                name=f"Brazil Coffee {index:02d}",
+                description="Coffee from Brazil",
+                price="15.00",
+                category=self.whole_bean,
+                caffeine_type="caffeinated",
+                roast_level="medium",
+                origin_country="Brazil",
+                stock_level=5,
+            )
+            for index in range(11)
+        ])
+        shop_url = reverse("core:product_list")
+
+        first_response = self.client.get(shop_url, {"q": "Brazil"})
+        second_response = self.client.get(shop_url, {"q": "Brazil", "page": 2})
+        first_page = first_response.context["products"]
+        second_page = second_response.context["products"]
+
+        self.assertEqual(len(first_page), 10)
+        self.assertEqual(len(second_page), 2)
+        self.assertContains(first_response, "12 results")
+        self.assertContains(first_response, 'href="?page=2&q=Brazil#products-heading"')
+        self.assertContains(second_response, 'href="?page=1&q=Brazil#products-heading"')
 
     def test_shop_search_matches_products_and_subscription_bundles(self):
         response = self.client.get(reverse("core:product_list"), {"q": "Brazil"})

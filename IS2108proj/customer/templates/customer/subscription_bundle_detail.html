@@ -1,4 +1,5 @@
 {% extends "customer/base_customer.html" %}
+{% load currency_tags %}
 {% block title %}{{ bundle.name }} | BrewMatch{% endblock %}
 {% block extra_head %}
     <style>
@@ -86,7 +87,7 @@
             <div>
                 <h1>{{ bundle.name }}</h1>
                 <p class="muted">{{ bundle.get_billing_frequency_display }} coffee subscription</p>
-                <p class="price">${{ bundle.price_per_delivery }} per delivery</p>
+                <p class="price">{{ selected_currency }} {{ bundle.price_per_delivery|currency_amount:currency_rate|floatformat:2 }} per delivery</p>
                 <p class="description">{{ bundle.description|default:"A curated coffee bundle, selected for your next delivery." }}</p>
                 <p class="muted">{{ bundle.total_items }} item{{ bundle.total_items|pluralize }} in each delivery</p>
                 <div class="subscribe">
@@ -101,7 +102,7 @@
                             {% for error in enrollment_form.delivery_address.errors %}
                                 <span class="notice" role="alert">{{ error }}</span>
                             {% endfor %}
-                            <button class="button" type="submit">Subscribe — ${{ bundle.price_per_delivery }}</button>
+                            <button class="button" type="submit">Subscribe — {{ selected_currency }} {{ bundle.price_per_delivery|currency_amount:currency_rate|floatformat:2 }}</button>
                         </form>
                         <p class="subscribe-note">Your first delivery order is placed now. This demo records the next delivery date, but does not automatically charge or create future orders.</p>
                     {% else %}
