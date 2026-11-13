@@ -2,8 +2,15 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.views.decorators.http import require_POST
-from .forms import CustomerSignupForm, QuestionnaireResponseForm
+from .forms import (
+    CustomerOnboardingForm,
+    CustomerSignupForm,
+    QuestionnaireResponseForm,
+    phone_region_for_value,
+    phone_without_region_code,
+)
 from core.forms import SubscriptionBundleReviewForm, SubscriptionEnrollmentForm
 from core.models import (
     Cart,
@@ -30,6 +37,18 @@ FLAVOUR_TERMS = {
 }
 
 
+def _customer_onboarding_complete(user):
+    profile = CustomerProfile.objects.filter(user=user).first()
+    return bool(
+        user.first_name.strip()
+        and user.last_name.strip()
+        and user.email.strip()
+        and profile
+        and (profile.phone_number or "").strip()
+        and (profile.delivery_address or "").strip()
+    )
+
+
 def customer_signup(request):
     if request.method == "POST":
         form = CustomerSignupForm(request.POST)
@@ -37,7 +56,7 @@ def customer_signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect("customer:customer_home")
+            return redirect("customer:customer_onboarding")
     else:
         form = CustomerSignupForm()
 
@@ -56,13 +75,63 @@ def customer_login(request):
 
         if user is not None and user.is_active:
             login(request, user)
-            return redirect("customer:customer_home")
+            if _customer_onboarding_complete(user):
+                return redirect("customer:customer_home")
+            return redirect("customer:customer_onboarding")
         else:
             message = "Invalid username or password."
 
     return render(request, "customer/login.html", {
         "message": message
     })
+
+
+@login_required(login_url="customer:customer_login")
+def customer_onboarding(request):
+    profile = CustomerProfile.objects.filter(user=request.user).first()
+
+    if request.method == "POST":
+        form = CustomerOnboardingForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                request.user.first_name = form.cleaned_data["first_name"]
+                request.user.last_name = form.cleaned_data["last_name"]
+                request.user.email = form.cleaned_data["email"]
+                request.user.save(update_fields=["first_name", "last_name", "email"])
+
+                CustomerProfile.objects.update_or_create(
+                    user=request.user,
+                    defaults={
+                        "phone_number": form.cleaned_data["phone_number"],
+                        "delivery_address": form.cleaned_data["delivery_address"],
+                    },
+                )
+
+            return redirect("customer:customer_home")
+    else:
+        form = CustomerOnboardingForm(
+            initial={
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "email": request.user.email,
+                "phone_region": (
+                    phone_region_for_value(profile.phone_number)
+                    if profile
+                    else "SG"
+                ),
+                "phone_number": (
+                    phone_without_region_code(
+                        profile.phone_number,
+                        phone_region_for_value(profile.phone_number),
+                    )
+                    if profile
+                    else ""
+                ),
+                "delivery_address": profile.delivery_address if profile else "",
+            }
+        )
+
+    return render(request, "customer/onboarding.html", {"form": form})
 @login_required(login_url="customer:customer_login")
 def customer_questionnaire(request):
     if request.method == "POST":
@@ -118,7 +187,18 @@ def customer_recommendations(request):
         .first()
     )
     if latest_response is None:
-        return redirect("customer:customer_questionnaire")
+        cart_count = 0
+        if hasattr(request.user, "cart"):
+           cart_count = sum(item.quantity for item in request.user.cart.items.all())
+        return render(request,"customer/recommendations.html",
+        {
+            "latest_response": None,
+            "recommended_products": [],
+            "recommendation_category": None,
+            "cart_count": cart_count,
+        },
+    )
+
 
     recommendation_category = latest_response.preferred_category
     products_query = Product.objects.filter(
@@ -197,6 +277,9 @@ def customer_recommendations(request):
 
 @login_required(login_url="customer:customer_login")
 def customer_home(request):
+    if not _customer_onboarding_complete(request.user):
+        return redirect("customer:customer_onboarding")
+
     latest_response = (
         QuestionnaireResponse.objects.filter(customer=request.user)
         .select_related("preferred_category")

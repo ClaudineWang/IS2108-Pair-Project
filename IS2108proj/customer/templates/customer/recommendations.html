@@ -1,255 +1,381 @@
 {% extends "customer/base_customer.html" %}
 {% block title %}My Recommendations | BrewMatch{% endblock %}
 {% block extra_head %}
-    <style>
-        :root {
-            --ink: #282520;
-            --muted: #716b62;
-            --line: #ded8ce;
-            --paper: #fffefa;
-            --cream: #f7f3eb;
-            --coffee: #70452f;
-            --coffee-dark: #4b3023;
-            --accent: #e7d4be;
-        }
+<style>
+    :root {
+        --ink: #282520;
+        --muted: #716b62;
+        --line: #ded8ce;
+        --paper: #fffefa;
+        --cream: #f7f3eb;
+        --coffee: #70452f;
+        --coffee-dark: #4b3023;
+        --accent: #e7d4be;
+    }
 
-        * { box-sizing: border-box; }
+    * {
+        box-sizing: border-box;
+    }
 
-        body {
-            margin: 0;
-            background: var(--paper);
-            color: var(--ink);
-            font-family: Arial, sans-serif;
-        }
+    body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Arial, sans-serif;
+    }
 
-        a { color: inherit; }
+    a {
+        color: inherit;
+    }
 
+    .topbar {
+        display: flex;
+        min-height: 82px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 14px clamp(20px, 4vw, 64px);
+        border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+        color: var(--coffee-dark);
+        font-size: 2rem;
+        line-height: 1;
+        text-decoration: none;
+    }
+
+    .brand-name {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .top-actions,
+    .top-actions form {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .pill-link,
+    .logout-button {
+        display: inline-flex;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border: 1px solid var(--ink);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        text-decoration: none;
+    }
+
+    .pill-link:hover,
+    .logout-button:hover {
+        background: var(--cream);
+    }
+
+    .logout-button {
+        cursor: pointer;
+    }
+
+    .layout {
+        display: grid;
+        min-height: calc(100vh - 82px);
+        grid-template-columns: 250px minmax(0, 1fr);
+    }
+
+    .sidebar {
+        padding: 30px 20px;
+        border-right: 1px solid var(--line);
+        background: #f8f5ef;
+    }
+
+    .side-nav {
+        position: sticky;
+        top: 24px;
+        display: grid;
+        gap: 7px;
+    }
+
+    .side-nav a {
+        padding: 13px 16px;
+        border-radius: 9px;
+        color: var(--muted);
+        text-decoration: none;
+    }
+
+    .side-nav a:hover,
+    .side-nav a.active {
+        background: var(--accent);
+        color: var(--coffee-dark);
+    }
+
+    main {
+        width: min(100%, 1200px);
+        min-width: 0;
+        margin: 0 auto;
+        padding: clamp(24px, 4vw, 52px);
+    }
+
+    h1 {
+        margin: 0 0 22px;
+        font-size: clamp(1.6rem, 3vw, 2rem);
+    }
+
+    .explanation {
+        margin: 0 0 38px;
+        padding: 18px 20px;
+        border: 1px solid var(--ink);
+        border-radius: 18px;
+        background: #fcfaf6;
+        color: #48443e;
+        line-height: 1.55;
+    }
+
+    .results-heading {
+        margin: 0 0 14px;
+        font-size: 1.1rem;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 14px;
+    }
+
+    .product-card {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: white;
+    }
+
+    .product-card:hover {
+        border-color: var(--coffee);
+    }
+
+    .product-image,
+    .image-placeholder {
+        display: grid;
+        width: 100%;
+        height: 145px;
+        place-items: center;
+        margin-bottom: 12px;
+        border-radius: 10px;
+        background: var(--cream);
+        color: #94785f;
+        font-size: 2.4rem;
+        object-fit: cover;
+    }
+
+    .product-name {
+        margin: 0 0 8px;
+        color: var(--coffee-dark);
+        font-size: 1.1rem;
+        text-decoration: none;
+    }
+
+    .product-meta {
+        margin: 4px 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+    }
+
+    .tasting-notes {
+        min-height: 2.8em;
+        margin: 8px 0;
+        line-height: 1.4;
+    }
+
+    .recommendation-reason {
+        margin: 8px 0;
+        color: var(--coffee-dark);
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    .price {
+        margin: auto 0 12px;
+        padding-top: 10px;
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    .add-form {
+        display: flex;
+        margin: 0;
+    }
+
+    .add-button {
+        width: 100%;
+        min-height: 40px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--coffee);
+        color: white;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .add-button:hover {
+        background: var(--coffee-dark);
+    }
+
+    .empty-state {
+        padding: 22px;
+        border: 1px dashed var(--line);
+        border-radius: 14px;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    .page-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-top: 28px;
+    }
+
+    .page-links a {
+        color: var(--coffee);
+    }
+
+    @media (max-width: 720px) {
         .topbar {
-            display: flex;
-            min-height: 82px;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 14px clamp(20px, 4vw, 64px);
-            border-bottom: 1px solid var(--line);
+            padding: 12px 16px;
         }
 
-        .brand {
-            color: var(--coffee-dark);
-            font-size: 2rem;
-            line-height: 1;
-            text-decoration: none;
+        .brand-name {
+            display: none;
         }
 
-        .brand-name { font-size: 1rem; font-weight: 700; }
-
-        .top-actions, .top-actions form {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 0;
+        .pill-link,
+        .logout-button {
+            min-height: 38px;
+            padding: 7px 12px;
+            font-size: 0.9rem;
         }
-
-        .pill-link, .logout-button {
-            display: inline-flex;
-            min-height: 42px;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 8px 18px;
-            border: 1px solid var(--ink);
-            border-radius: 999px;
-            background: transparent;
-            color: var(--ink);
-            font: inherit;
-            text-decoration: none;
-        }
-
-        .pill-link:hover, .logout-button:hover { background: var(--cream); }
-        .logout-button { cursor: pointer; }
 
         .layout {
-            display: grid;
-            min-height: calc(100vh - 82px);
-            grid-template-columns: 250px minmax(0, 1fr);
+            grid-template-columns: 1fr;
         }
 
         .sidebar {
-            padding: 30px 20px;
-            border-right: 1px solid var(--line);
-            background: #f8f5ef;
+            padding: 10px 12px;
+            border-right: 0;
+            border-bottom: 1px solid var(--line);
         }
 
         .side-nav {
-            position: sticky;
-            top: 24px;
-            display: grid;
-            gap: 7px;
+            position: static;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 4px;
         }
 
         .side-nav a {
-            padding: 13px 16px;
-            border-radius: 9px;
-            color: var(--muted);
-            text-decoration: none;
-        }
-
-        .side-nav a:hover, .side-nav a.active {
-            background: var(--accent);
-            color: var(--coffee-dark);
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 0.85rem;
         }
 
         main {
-            width: min(100%, 1200px);
-            min-width: 0;
-            margin: 0 auto;
-            padding: clamp(24px, 4vw, 52px);
+            padding: 24px 16px 36px;
         }
-
-        h1 { margin: 0 0 22px; font-size: clamp(1.6rem, 3vw, 2rem); }
-
-        .explanation {
-            margin: 0 0 38px;
-            padding: 18px 20px;
-            border: 1px solid var(--ink);
-            border-radius: 18px;
-            background: #fcfaf6;
-            color: #48443e;
-            line-height: 1.55;
-        }
-
-        .results-heading { margin: 0 0 14px; font-size: 1.1rem; }
 
         .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        }
+    }
+
+    @media (max-width: 420px) {
+        .topbar {
+            gap: 8px;
         }
 
-        .product-card {
-            display: flex;
-            min-width: 0;
-            flex-direction: column;
-            padding: 14px;
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            background: white;
+        .top-actions {
+            gap: 6px;
         }
 
-        .product-card:hover { border-color: var(--coffee); }
-
-        .product-image, .image-placeholder {
-            display: grid;
-            width: 100%;
-            height: 145px;
-            place-items: center;
-            margin-bottom: 12px;
-            border-radius: 10px;
-            background: var(--cream);
-            color: #94785f;
-            font-size: 2.4rem;
-            object-fit: cover;
+        .side-nav {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .product-name {
-            margin: 0 0 8px;
-            color: var(--coffee-dark);
-            font-size: 1.1rem;
-            text-decoration: none;
+        .product-grid {
+            grid-template-columns: 1fr;
         }
-
-        .product-meta { margin: 4px 0; color: var(--muted); font-size: 0.92rem; }
-        .tasting-notes { min-height: 2.8em; margin: 8px 0; line-height: 1.4; }
-        .recommendation-reason { margin: 8px 0; color: var(--coffee-dark); font-size: 0.9rem; line-height: 1.45; }
-        .price { margin: auto 0 12px; padding-top: 10px; font-size: 1.05rem; font-weight: 700; }
-
-        .add-form { display: flex; margin: 0; }
-        .add-button {
-            width: 100%;
-            min-height: 40px;
-            border: 0;
-            border-radius: 999px;
-            background: var(--coffee);
-            color: white;
-            font: inherit;
-            cursor: pointer;
-        }
-        .add-button:hover { background: var(--coffee-dark); }
-
-        .empty-state {
-            padding: 22px;
-            border: 1px dashed var(--line);
-            border-radius: 14px;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-
-        .page-links { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 28px; }
-        .page-links a { color: var(--coffee); }
-
-        @media (max-width: 720px) {
-            .topbar { padding: 12px 16px; }
-            .brand-name { display: none; }
-            .pill-link, .logout-button { min-height: 38px; padding: 7px 12px; font-size: 0.9rem; }
-            .layout { grid-template-columns: 1fr; }
-            .sidebar { padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
-            .side-nav { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-            .side-nav a { padding: 10px 6px; text-align: center; font-size: 0.85rem; }
-            main { padding: 24px 16px 36px; }
-            .product-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-        }
-
-        @media (max-width: 420px) {
-            .topbar { gap: 8px; }
-            .top-actions { gap: 6px; }
-            .side-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .product-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    }
+</style>
 {% endblock %}
 {% block content %}
-            <h1>Your Personalised Coffee Recommendations</h1>
-            <p class="explanation">
-                You selected <strong>{{ recommendation_category.get_name_display }}</strong> as your coffee format,
-                prefer <strong>{{ latest_response.get_preferred_flavour_display }}</strong> notes, and brew with
-                <strong>{{ latest_response.get_preferred_brewing_method_display }}</strong>.
-                Our model predicts that a
-                <strong>{{ latest_response.get_predicted_roast_display|default:latest_response.get_preferred_roast_display }} roast</strong>
-                may suit your taste. We show in-stock coffees in your selected format, ranked by roast, caffeine, and tasting-note matches.
-            </p>
+{% if latest_response %}
 
-            <h2 class="results-heading">Showing {{ recommended_products|length }} matching product{{ recommended_products|pluralize }}:</h2>
-            {% if recommended_products %}
-                <div class="product-grid">
-                    {% for product in recommended_products %}
-                        <article class="product-card">
-                            <a href="{% url 'core:product_detail' product.id %}" aria-label="View {{ product.name }}">
-                                {% if product.image %}
-                                    <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
-                                {% else %}
-                                    <span class="image-placeholder" aria-hidden="true">☕</span>
-                                {% endif %}
-                            </a>
-                            <a class="product-name" href="{% url 'core:product_detail' product.id %}">{{ product.name }}</a>
-                            <p class="product-meta">Origin: {{ product.origin_country|default:"Not specified" }}</p>
-                            <p class="product-meta">{{ product.get_roast_level_display }} Roast · {{ product.get_caffeine_type_display }}</p>
-                            <p class="product-meta tasting-notes">{{ product.tasting_notes|default:product.description|default:"Freshly roasted coffee."|truncatewords:12 }}</p>
-                            <p class="recommendation-reason"><strong>Why this coffee?</strong> {{ product.recommendation_reason }}</p>
-                            <p class="price">${{ product.price }}</p>
-                            <form class="add-form" method="post" action="{% url 'core:add_to_cart' product.id %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="quantity" value="1">
-                                <button class="add-button" type="submit">Add to Cart</button>
-                            </form>
-                        </article>
-                    {% endfor %}
-                </div>
+<h1>Your Personalised Coffee Recommendations</h1>
+<p class="explanation">
+    You selected <strong>{{ recommendation_category.get_name_display }}</strong> as your coffee format,
+    prefer <strong>{{ latest_response.get_preferred_flavour_display }}</strong> notes, and brew with
+    <strong>{{ latest_response.get_preferred_brewing_method_display }}</strong>.
+    Our model predicts that a
+    <strong>{{ latest_response.get_predicted_roast_display|default:latest_response.get_preferred_roast_display }}
+        roast</strong>
+    may suit your taste. We show in-stock coffees in your selected format, ranked by roast, caffeine, and tasting-note
+    matches.
+</p>
+
+<h2 class="results-heading">
+    Showing {{ recommended_products|length }} matching product{{ recommended_products|length|pluralize }}:
+</h2>
+{% if recommended_products %}
+<div class="product-grid">
+    {% for product in recommended_products %}
+    <article class="product-card">
+        <a href="{% url 'core:product_detail' product.id %}" aria-label="View {{ product.name }}">
+            {% if product.image %}
+            <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
             {% else %}
-                <p class="empty-state">There are no in-stock products to recommend right now. Browse the shop or check again later.</p>
+            <span class="image-placeholder" aria-hidden="true">☕</span>
             {% endif %}
+        </a>
+        <a class="product-name" href="{% url 'core:product_detail' product.id %}">{{ product.name }}</a>
+        <p class="product-meta">Origin: {{ product.origin_country|default:"Not specified" }}</p>
+        <p class="product-meta">{{ product.get_roast_level_display }} Roast · {{ product.get_caffeine_type_display }}
+        </p>
+        {% firstof product.tasting_notes product.description "Freshly roasted coffee." as coffee_text %}
+        <p class="product-meta tasting-notes">{{ coffee_text|truncatewords:12 }}</p>
+        <p class="recommendation-reason"><strong>Why this coffee?</strong> {{ product.recommendation_reason }}</p>
+        <p class="price">${{ product.price }}</p>
+        <form class="add-form" method="post" action="{% url 'core:add_to_cart' product.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="quantity" value="1">
+            <button class="add-button" type="submit">Add to Cart</button>
+        </form>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<p class="empty-state">There are no in-stock products to recommend right now. Browse the shop or check again later.</p>
+{% endif %}
 
-            <div class="page-links">
-                <a href="{% url 'customer:customer_questionnaire' %}">Retake the coffee quiz</a>
-                <a href="{% url 'core:product_list' %}">Browse all products</a>
-            </div>
+<div class="page-links">
+    <a href="{% url 'customer:customer_questionnaire' %}">Retake the coffee quiz</a>
+    <a href="{% url 'core:product_list' %}">Browse all products</a>
+</div>
+{% else %}
+    <div class="empty-state">
+        <h2>Complete the coffee quiz first</h2>
+        <p>
+            Take the coffee quiz so we can create personalised recommendations for you.
+        </p>
+        <a href="{% url 'customer:customer_questionnaire' %}">
+            Take the coffee quiz
+        </a>
+    </div>
+{% endif %}
 {% endblock %}
