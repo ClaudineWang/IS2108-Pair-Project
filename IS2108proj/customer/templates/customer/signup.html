@@ -95,22 +95,6 @@
         </div>
 
         <div class="field">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="{{ form.email.value|default:'' }}" required>
-            {% for error in form.email.errors %}
-                <p class="field-error">{{ error }}</p>
-            {% endfor %}
-        </div>
-
-        <div class="field">
-            <label for="phone_number">Contact Number</label>
-            <input type="text" id="phone_number" name="phone_number" value="{{ form.phone_number.value|default:'' }}" required>
-            {% for error in form.phone_number.errors %}
-                <p class="field-error">{{ error }}</p>
-            {% endfor %}
-        </div>
-
-        <div class="field">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
             {% for error in form.password.errors %}

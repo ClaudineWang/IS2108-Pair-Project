@@ -25,6 +25,8 @@ class CustomerHomeTests(TestCase):
             username="coffee-fan",
             password="test-password-123",
             email="coffee@example.com",
+            first_name="Coffee",
+            last_name="Fan",
         )
         self.category = Category.objects.create(name="whole_bean")
         self.product = Product.objects.create(
@@ -52,7 +54,11 @@ class CustomerHomeTests(TestCase):
             preferred_caffeine_type="caffeinated",
             preferred_category=self.category,
         )
-        CustomerProfile.objects.create(user=self.user)
+        CustomerProfile.objects.create(
+            user=self.user,
+            phone_number="+6588888888",
+            delivery_address="1 Coffee Lane",
+        )
 
     def test_customer_home_requires_login(self):
         response = self.client.get(reverse("customer:customer_home"))
@@ -206,31 +212,59 @@ class CustomerHomeTests(TestCase):
         ).latest("created_at")
         self.assertEqual(saved_response.predicted_roast, "medium")
 
-    def test_signup_creates_profile_without_delivery_address(self):
+    def test_signup_redirects_to_onboarding_without_creating_profile(self):
         response = self.client.post(
             reverse("customer:customer_signup"),
             {
                 "username": "new-coffee-fan",
-                "email": "new@example.com",
                 "password": "test-password-123",
                 "confirm_password": "test-password-123",
-                "phone_number": "555-0100",
+            },
+        )
+
+        self.assertRedirects(response, reverse("customer:customer_onboarding"))
+        self.assertFalse(
+            CustomerProfile.objects.filter(user__username="new-coffee-fan").exists()
+        )
+
+    def test_onboarding_saves_profile_phone_as_entered(self):
+        self.client.post(
+            reverse("customer:customer_signup"),
+            {
+                "username": "new-coffee-fan",
+                "password": "test-password-123",
+                "confirm_password": "test-password-123",
+            },
+        )
+
+        response = self.client.post(
+            reverse("customer:customer_onboarding"),
+            {
+                "first_name": "New",
+                "last_name": "Coffee Fan",
+                "email": "new@example.com",
+                "phone_region": "US",
+                "phone_number": "415-555-2671",
+                "delivery_address": "12 Coffee Street",
             },
         )
 
         self.assertRedirects(response, reverse("customer:customer_home"))
-        profile = CustomerProfile.objects.get(user__username="new-coffee-fan")
-        self.assertFalse(profile.delivery_address)
+        user = User.objects.get(username="new-coffee-fan")
+        profile = CustomerProfile.objects.get(user=user)
+        self.assertEqual(user.first_name, "New")
+        self.assertEqual(user.last_name, "Coffee Fan")
+        self.assertEqual(user.email, "new@example.com")
+        self.assertEqual(profile.phone_number, "+1 415-555-2671")
+        self.assertEqual(profile.delivery_address, "12 Coffee Street")
 
     def test_signup_displays_username_validation_error(self):
         response = self.client.post(
             reverse("customer:customer_signup"),
             {
                 "username": self.user.username,
-                "email": "another@example.com",
                 "password": "test-password-123",
                 "confirm_password": "test-password-123",
-                "phone_number": "555-0100",
             },
         )
 
@@ -424,8 +458,18 @@ class SubscriptionBundleDetailTests(TestCase):
 
 class OrderTrackingTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="order-customer", password="test-password")
-        self.profile = CustomerProfile.objects.create(user=self.user)
+        self.user = User.objects.create_user(
+            username="order-customer",
+            password="test-password",
+            email="order@example.com",
+            first_name="Order",
+            last_name="Customer",
+        )
+        self.profile = CustomerProfile.objects.create(
+            user=self.user,
+            phone_number="+6588888888",
+            delivery_address="1 Coffee Lane",
+        )
         self.category = Category.objects.create(name="whole_bean")
         self.product = Product.objects.create(
             name="Order Tracking Coffee",
@@ -533,10 +577,13 @@ class CustomerProfileTests(TestCase):
             username="profile-customer",
             password="profile-test-password",
             email="profile@example.com",
+            first_name="Profile",
+            last_name="Customer",
         )
         self.profile = CustomerProfile.objects.create(
             user=self.user,
             phone_number="8888 8888",
+            delivery_address="1 Coffee Lane",
         )
         self.active_bundle = SubscriptionBundle.objects.create(
             name="Active Coffee Plan",
