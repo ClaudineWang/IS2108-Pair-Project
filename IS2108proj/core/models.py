@@ -53,6 +53,14 @@ class Product(models.Model):
     is_visible = models.BooleanField(default=True)
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.stock_level == 0:
+            self.is_visible = False
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"is_visible"}
+        super().save(*args, **kwargs)
     @property
     def stock_status(self):
         if self.stock_level == 0:
@@ -89,7 +97,7 @@ class CustomerSubscription(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('cancelled', 'Cancelled'),
-        
+
 
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='subscriptions')
