@@ -56,7 +56,9 @@
 <div class="prediction-header">
     <h1>Restock Predictions</h1>
     <p>
-        Predicted product demand for the upcoming week.
+        Predicted product demand for the week of
+        {% if predictions %}{{ predictions.0.forecast_week|date:"d M Y" }}{% else %}next week{% endif %}.
+        The prediction combines historical one-time demand with confirmed active subscription deliveries.
     </p>
 </div>
 
@@ -67,6 +69,7 @@
         <tr>
             <th>Product</th>
             <th>Current Stock</th>
+            <th>Subscription Demand</th>
             <th>Predicted Demand</th>
             <th>Suggested Restock</th>
             <th>Stock Status</th>
@@ -81,6 +84,10 @@
 
             <td>
                 {{ prediction.current_stock }}
+            </td>
+
+            <td>
+                {{ prediction.subscription_units }} units
             </td>
 
             <td>
@@ -125,7 +132,7 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="6">
+            <td colspan="7">
                 No predictions are currently available.
             </td>
         </tr>
