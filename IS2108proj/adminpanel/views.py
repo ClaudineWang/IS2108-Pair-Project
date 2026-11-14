@@ -325,7 +325,10 @@ def customer_list(request):
         selected_currency = "SGD"
 
     customers = (
-        CustomerProfile.objects
+        CustomerProfile.objects.filter(
+            user__is_staff=False,
+            user__is_superuser=False,
+            )
         .select_related("user")
         .annotate(
             total_order=Count("orders", distinct=True),
@@ -376,7 +379,10 @@ def customer_view (request, customer_id):
 
     request.session["currency"] = selected_currency
 
-    customer = CustomerProfile.objects.annotate(
+    customer = CustomerProfile.objects.filter(
+        user__is_staff=False,
+        user__is_superuser=False,
+        ).annotate(
         total_order=Count('orders', distinct=True),
         total_spending=Coalesce(models.Sum('orders__grand_total'), 0, output_field=models.DecimalField(max_digits=10, decimal_places=2))
     ).select_related('user').get(id=customer_id)
@@ -598,7 +604,10 @@ def review_update(request, review_id):
 def customer_subscription_list(request):
     selected_currency = get_selected_currency(request)
 
-    subscriptions = CustomerSubscription.objects.select_related('customer', 'bundle').order_by('-start_date')
+    subscriptions = CustomerSubscription.objects.filter(
+        customer__user__is_staff=False,
+        customer__user__is_superuser=False,
+        ).select_related('customer', 'bundle').order_by('-start_date')
     search_query = request.GET.get("search", "")
     status_filter = request.GET.get("status", "")
     if search_query:
@@ -638,6 +647,10 @@ def customer_subscription_view(request, subscription_id):
 
     subscription = (
         CustomerSubscription.objects
+        .filter(
+            customer__user__is_staff=False,
+            customer__user__is_superuser=False,
+        )
         .select_related("customer__user", "bundle")
         .get(id=subscription_id)
     )
@@ -728,8 +741,12 @@ def admin_dashboard(request):
         'product_sales': convert_money(total_orders["product_sales"]),
         'total_revenue': convert_money(total_orders["revenue"]),
         'monthly_revenue_data': monthly_revenue_data,
-        'total_customers': CustomerProfile.objects.count(),
-        'active_subscriptions': CustomerSubscription.objects.filter(status="active").count(),
+        'total_customers': CustomerProfile.objects.filter(user__is_staff=False, user__is_superuser=False).count(),
+        'active_subscriptions': CustomerSubscription.objects.filter(
+            status="active",
+            customer__user__is_staff=False,
+            customer__user__is_superuser=False,
+        ).count(),
     }
     return render(request, "adminpanel/admin_dashboard.html", context)
 

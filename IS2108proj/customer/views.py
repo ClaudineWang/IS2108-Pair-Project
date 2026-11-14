@@ -37,6 +37,10 @@ FLAVOUR_TERMS = {
 }
 
 
+def _is_staff_preview(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
 def _customer_onboarding_complete(user):
     profile = CustomerProfile.objects.filter(user=user).first()
     return bool(
@@ -75,6 +79,8 @@ def customer_login(request):
 
         if user is not None and user.is_active:
             login(request, user)
+            if _is_staff_preview(user):
+                return redirect("customer:customer_home")
             if _customer_onboarding_complete(user):
                 return redirect("customer:customer_home")
             return redirect("customer:customer_onboarding")
@@ -88,6 +94,9 @@ def customer_login(request):
 
 @login_required(login_url="customer:customer_login")
 def customer_onboarding(request):
+    if _is_staff_preview(request.user):
+        return redirect("customer:customer_home")
+
     profile = CustomerProfile.objects.filter(user=request.user).first()
 
     if request.method == "POST":
@@ -134,6 +143,10 @@ def customer_onboarding(request):
     return render(request, "customer/onboarding.html", {"form": form})
 @login_required(login_url="customer:customer_login")
 def customer_questionnaire(request):
+    if request.method == "POST" and _is_staff_preview(request.user):
+        messages.info(request, "Admin preview mode does not support customer actions.")
+        return redirect("customer:customer_home")
+
     if request.method == "POST":
         form = QuestionnaireResponseForm(request.POST)
         if form.is_valid():
@@ -277,7 +290,7 @@ def customer_recommendations(request):
 
 @login_required(login_url="customer:customer_login")
 def customer_home(request):
-    if not _customer_onboarding_complete(request.user):
+    if not _is_staff_preview(request.user) and not _customer_onboarding_complete(request.user):
         return redirect("customer:customer_onboarding")
 
     latest_response = (
@@ -335,6 +348,10 @@ def customer_home(request):
 
 @login_required(login_url="customer:customer_login")
 def customer_profile(request):
+    if _is_staff_preview(request.user):
+        messages.info(request, "Admin preview mode does not include customer profile data.")
+        return redirect("customer:customer_home")
+
     profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
     active_subscriptions = (
         CustomerSubscription.objects.filter(customer=profile, status="active")
@@ -355,6 +372,10 @@ def customer_profile(request):
 
 @login_required(login_url="customer:customer_login")
 def order_tracking(request):
+    if _is_staff_preview(request.user):
+        messages.info(request, "Admin preview mode does not include customer orders.")
+        return redirect("customer:customer_home")
+
     profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
     current_order = (
         Order.objects.filter(
@@ -476,6 +497,10 @@ def subscription_bundle_detail(request, bundle_id):
     has_active_subscription = False
     review_form = SubscriptionBundleReviewForm()
 
+    if request.method == "POST" and _is_staff_preview(request.user):
+        messages.info(request, "Admin preview mode does not support customer actions.")
+        return redirect("bundles:detail", bundle_id=bundle.id)
+
     if request.user.is_authenticated:
         has_subscribed = CustomerSubscription.objects.filter(
             customer__user=request.user,
@@ -546,6 +571,10 @@ def subscribe_to_bundle(request, bundle_id):
         pk=bundle_id,
         is_active=True,
     )
+    if _is_staff_preview(request.user):
+        messages.info(request, "Admin preview mode does not support subscriptions.")
+        return redirect("bundles:detail", bundle_id=bundle.id)
+
     form = SubscriptionEnrollmentForm(request.POST)
     if not form.is_valid():
         messages.error(request, "Please enter a delivery address to subscribe.")
@@ -575,6 +604,10 @@ def subscribe_to_bundle(request, bundle_id):
 @login_required(login_url="customer:customer_login")
 @require_POST
 def cancel_subscription(request, subscription_id):
+    if _is_staff_preview(request.user):
+        messages.info(request, "Admin preview mode does not support customer actions.")
+        return redirect("customer:customer_home")
+
     subscription = get_object_or_404(
         CustomerSubscription,
         pk=subscription_id,

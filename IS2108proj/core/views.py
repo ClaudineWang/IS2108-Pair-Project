@@ -23,6 +23,10 @@ from .pagination import paginate_queryset
 from .services import InsufficientStockError, place_order_from_cart
 
 
+def _is_staff_preview(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
 def product_list(request):
     """Displays searchable products and active subscription bundles."""
     selected_currency = get_selected_currency(request)
@@ -118,8 +122,9 @@ def product_detail(request, product_id):
     can_review = False
     has_reviewed = False
     review_form = CustomerReviewForm()
+    staff_preview = _is_staff_preview(request.user)
 
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and not staff_preview:
         cart, _ = Cart.objects.get_or_create(customer=request.user)
         cart_count = sum(item.quantity for item in cart.items.all())
 
@@ -158,6 +163,10 @@ def product_detail(request, product_id):
                     messages.info(request, 'You have already reviewed this product.')
                 return redirect('core:product_detail', product_id=product.id)
 
+    if request.method == 'POST' and staff_preview:
+        messages.info(request, 'Admin preview mode does not support customer actions.')
+        return redirect('core:product_detail', product_id=product.id)
+
     context = {
         'product': product,
         'cart_count': cart_count,
@@ -176,6 +185,10 @@ def product_detail(request, product_id):
 def add_to_cart(request, product_id):
     """Adds a product to the logged-in customer's cart."""
     product = get_object_or_404(Product, id=product_id, is_visible=True)
+
+    if _is_staff_preview(request.user):
+        messages.info(request, 'Admin preview mode does not support customer actions.')
+        return redirect('core:product_detail', product_id=product.id)
 
     quantity = request.POST.get('quantity', 1)
     try:
@@ -210,8 +223,12 @@ def add_to_cart(request, product_id):
 @login_required
 def cart_view(request):
     """Shows all cart items for the logged-in customer."""
-    cart, _ = Cart.objects.get_or_create(customer=request.user)
-    cart_items = cart.items.select_related('product').all()
+    cart = Cart.objects.filter(customer=request.user).first()
+    cart_items = (
+        cart.items.select_related('product').all()
+        if cart
+        else []
+    )
     subtotal = sum((item.subtotal for item in cart_items), Decimal('0.00'))
     total_items = sum(item.quantity for item in cart_items)
     delivery_fee = Decimal('0.00') if subtotal >= Decimal('50.00') else Decimal('5.00')
@@ -234,6 +251,10 @@ def cart_view(request):
 @require_POST
 def update_cart_item(request, item_id):
     """Updates the quantity of a cart item."""
+    if _is_staff_preview(request.user):
+        messages.info(request, 'Admin preview mode does not support customer actions.')
+        return redirect('core:product_list')
+
     cart_item = get_object_or_404(CartItem, id=item_id, cart__customer=request.user)
 
     quantity = request.POST.get('quantity', cart_item.quantity)
@@ -277,6 +298,10 @@ def update_cart_item(request, item_id):
 @require_POST
 def remove_from_cart(request, item_id):
     """Removes a product from the user's cart."""
+    if _is_staff_preview(request.user):
+        messages.info(request, 'Admin preview mode does not support customer actions.')
+        return redirect('core:product_list')
+
     cart_item = get_object_or_404(CartItem, id=item_id, cart__customer=request.user)
     product_name = cart_item.product.name
     cart_item.delete()
@@ -287,6 +312,10 @@ def remove_from_cart(request, item_id):
 @login_required
 def checkout(request):
     """Shows the checkout page and creates an order when submitted."""
+    if _is_staff_preview(request.user):
+        messages.info(request, 'Admin preview mode does not support customer actions.')
+        return redirect('core:product_list')
+
     cart, _ = Cart.objects.get_or_create(customer=request.user)
     cart_items = cart.items.select_related('product').all()
 
