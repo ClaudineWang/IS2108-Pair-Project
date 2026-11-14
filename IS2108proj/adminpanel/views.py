@@ -50,6 +50,8 @@ def product_list(request):
         'roast_levels': Product.ROAST_LEVEL,
         'caffeine_types': Product.CAFFEINE_TYPE,
         'category_filter': category_filter,
+        'roast_filter': roast_filter,
+        'caffeine_filter': caffeine_filter,
         'currency': selected_currency,
         'selected_currency': selected_currency,
     }
@@ -208,6 +210,7 @@ def inventory_update(request, product_id):
 @staff_required
 def order_list(request):
     delivery_statuses = Order.DELIVERY_STATUS
+    order_types = Order.ORDER_TYPE
     orders = Order.objects.all().order_by("-created_at")
     search_query = request.GET.get("search", "")
     date_filter = request.GET.get("created_at", "")
@@ -238,7 +241,7 @@ def order_list(request):
         orders = orders.filter(
             delivery_status=delivery_status_filter
         )
-    page_obj, query_string = paginate_queryset(request, orders, per_page=20)
+    page_obj, query_string = paginate_queryset(request, orders, per_page=10)
     for order in page_obj:
         order.display_grand_total = order.grand_total * CURRENCY_RATES[selected_currency]
 
@@ -247,6 +250,7 @@ def order_list(request):
         'page_obj': page_obj,
         'query_string': query_string,
         'delivery_statuses': delivery_statuses,
+        'order_types': order_types,
         'search_query': search_query,
         'date_filter': date_filter,
         'order_type_filter': order_type_filter,
@@ -345,7 +349,7 @@ def customer_list(request):
         if search_query.isdigit():
             search_filter |= Q(id=int(search_query))
         customers = customers.filter(search_filter)
-    page_obj, query_string = paginate_queryset(request, customers, per_page=20)
+    page_obj, query_string = paginate_queryset(request, customers, per_page=10)
 
     for customer in page_obj:
         customer.display_total_spending = (
@@ -420,7 +424,7 @@ def subscription_bundle_list(request):
     elif is_active_filter == 'false':
         subscription_bundles = subscription_bundles.filter(is_active = False)
 
-    page_obj, query_string = paginate_queryset(request, subscription_bundles, per_page=20)
+    page_obj, query_string = paginate_queryset(request, subscription_bundles, per_page=10)
     for bundle in page_obj:
         bundle.display_price = bundle.price_per_delivery * CURRENCY_RATES[selected_currency]
     context= {
@@ -609,7 +613,7 @@ def customer_subscription_list(request):
         subscriptions = subscriptions.filter(
             status = status_filter
         )
-    page_obj, query_string = paginate_queryset(request, subscriptions, per_page=20)
+    page_obj, query_string = paginate_queryset(request, subscriptions, per_page=10)
 
     context = {
         'subscriptions': page_obj,

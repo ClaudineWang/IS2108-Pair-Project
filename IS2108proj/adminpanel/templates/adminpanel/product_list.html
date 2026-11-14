@@ -47,7 +47,7 @@
 
         {% for category in categories %}
         <option value="{{ category.id }}" {% if category_filter == category.id|stringformat:"s" %} selected {% endif %}>
-            {{ category.name }}
+            {{ category.get_name_display }}
         </option>
         {% endfor %}
     </select>

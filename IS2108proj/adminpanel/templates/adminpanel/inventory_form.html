@@ -19,15 +19,6 @@
     {{ product.stock_status }}
 </p>
 
-<p>
-    <strong>Visibility:</strong>
-    {% if product.is_visible %}
-        Visible
-    {% else %}
-        Hidden
-    {% endif %}
-</p>
-
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
