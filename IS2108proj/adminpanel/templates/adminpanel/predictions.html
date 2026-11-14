@@ -58,7 +58,6 @@
     <p>
         Predicted product demand for the week of
         {% if predictions %}{{ predictions.0.forecast_week|date:"d M Y" }}{% else %}next week{% endif %}.
-        The prediction combines historical one-time demand with confirmed active subscription deliveries.
     </p>
 </div>
 
@@ -73,7 +72,6 @@
             <th>Predicted Demand</th>
             <th>Suggested Restock</th>
             <th>Stock Status</th>
-            <th>Recommendation</th>
         </tr>
     </thead>
 
@@ -122,17 +120,10 @@
                 {% endif %}
             </td>
 
-            <td>
-                {% if prediction.suggested_restock > 0 %}
-                    Restock recommended
-                {% else %}
-                    Stock level is sufficient
-                {% endif %}
-            </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7">
+            <td colspan="6">
                 No predictions are currently available.
             </td>
         </tr>
