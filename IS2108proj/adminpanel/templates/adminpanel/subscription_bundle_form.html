@@ -204,6 +204,8 @@
 
         totalForms.value =
             currentFormCount + 1;
+
+        syncProductOptions();
     }
 
 
@@ -220,7 +222,50 @@
         }
 
         row.style.display = "none";
+        syncProductOptions();
     }
+
+    function syncProductOptions() {
+        const rows = Array.from(
+            document.querySelectorAll("#product-rows .product-row")
+        ).filter(function (row) {
+            const deleteInput = row.querySelector('input[name$="-DELETE"]');
+            return row.style.display !== "none" &&
+                (!deleteInput || deleteInput.value !== "on");
+        });
+
+        const selectedProductIds = new Set();
+
+        rows.forEach(function (row) {
+            const select = row.querySelector('select[name$="-product"]');
+            if (select && select.value) {
+                selectedProductIds.add(select.value);
+            }
+        });
+
+        rows.forEach(function (row) {
+            const select = row.querySelector('select[name$="-product"]');
+            if (!select) return;
+
+            Array.from(select.options).forEach(function (option) {
+                const selectedInAnotherRow =
+                    option.value &&
+                    selectedProductIds.has(option.value) &&
+                    option.value !== select.value;
+
+                option.hidden = selectedInAnotherRow;
+                option.disabled = selectedInAnotherRow;
+            });
+        });
+    }
+
+    document.addEventListener("change", function (event) {
+        if (event.target.matches('#product-rows select[name$="-product"]')) {
+            syncProductOptions();
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", syncProductOptions);
 </script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -385,6 +430,10 @@
                         .style.display = "none";
                 }
             });
+
+            if (typeof syncProductOptions === "function") {
+                syncProductOptions();
+            }
         }
     );
 </script>

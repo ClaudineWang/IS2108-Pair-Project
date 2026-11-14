@@ -156,9 +156,10 @@ class BaseBundleItemFormSet(BaseInlineFormSet):
         self.bundle = kwargs.pop("bundle", None)
         super().__init__(*args, **kwargs)
 
-    def _construct_form(self, i, **kwargs):
+    def get_form_kwargs(self, index):
+        kwargs = super().get_form_kwargs(index)
         kwargs["bundle"] = self.bundle
-        return super()._construct_form(i, **kwargs)
+        return kwargs
 
 BundleItemFormSet = inlineformset_factory(
     SubscriptionBundle,

@@ -55,14 +55,6 @@ def get_scheduled_subscription_units(forecast_week):
     )
 
     for subscription in subscriptions:
-        delivery_date = subscription.next_delivery_date
-
-        if (
-            subscription.end_date is not None
-            and delivery_date > subscription.end_date.date()
-        ):
-            continue
-
         for bundle_item in subscription.bundle.bundle_items.all():
             subscription_units[bundle_item.product_id] += bundle_item.quantity
 
