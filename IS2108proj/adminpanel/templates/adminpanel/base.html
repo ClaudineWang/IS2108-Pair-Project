@@ -56,12 +56,12 @@
         }
 
         .admin-header {
-            background: var(--coffee);
-            color: white;
-            padding: 18px 22px;
+            background: var(--paper);
+            color: var(--ink);
+            padding: 14px 18px;
+            border: 1px solid var(--line);
             border-radius: 12px;
             margin-bottom: 24px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
         }
 
         .brand-row {
@@ -74,7 +74,28 @@
 
         .brand-title {
             margin: 0;
-            font-size: 24px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--coffee-dark);
+            line-height: 1;
+            text-decoration: none;
+        }
+
+        .brand:hover {
+            text-decoration: none;
+        }
+
+        .brand-mark { font-size: 1.9rem; }
+        .brand-name { font-size: 1rem; font-weight: 700; }
+
+        .brand-row {
+            min-height: 42px;
         }
 
         .header-actions {
@@ -87,23 +108,23 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            border-top: 1px solid var(--line);
             margin-top: 16px;
             padding-top: 14px;
         }
 
         .nav-link {
-            color: var(--cream);
+            color: var(--muted);
             text-decoration: none;
             padding: 9px 13px;
-            border-radius: 7px;
+            border-radius: 9px;
             font-weight: 600;
             transition: background 0.2s ease;
         }
 
         .nav-link:hover,
         .nav-link.active {
-            background: white;
+            background: var(--accent);
             color: var(--coffee-dark);
             text-decoration: none;
         }
@@ -113,11 +134,18 @@
             align-items: center;
             gap: 6px;
             margin: 0;
-            color: white;
+            color: var(--muted);
         }
 
         .currency-form select {
-            padding: 7px;
+            min-height: 42px;
+            padding: 8px 12px;
+            border: 1px solid var(--coffee);
+            border-radius: 999px;
+            background: var(--accent);
+            color: var(--coffee-dark);
+            font-weight: 600;
+            cursor: pointer;
         }
 
         .logout-form {
@@ -126,14 +154,14 @@
 
         .logout-button {
             background: transparent;
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            padding: 8px 12px;
-            border-radius: 6px;
+            color: var(--ink);
+            border: 1px solid var(--ink);
+            padding: 8px 18px;
+            border-radius: 999px;
         }
 
         .logout-button:hover {
-            background: white;
+            background: var(--accent);
             color: var(--coffee-dark);
         }
 
@@ -172,7 +200,10 @@
     <div class="container">
         <header class="admin-header">
             <div class="brand-row">
-                <h1 class="brand-title">BrewMatch Admin </h1>
+                <a class="brand" href="{% url 'adminpanel:admin_dashboard' %}" aria-label="BrewMatch Admin dashboard">
+                    <span class="brand-mark" aria-hidden="true">☕</span>
+                    <span class="brand-name">BrewMatch Admin</span>
+                </a>
 
                 <div class="header-actions">
                     <form method="get" class="currency-form">
