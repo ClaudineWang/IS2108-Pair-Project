@@ -9,7 +9,18 @@ from django.contrib.auth import authenticate
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = "__all__"
+        fields = [
+            "name",
+            "description",
+            "price",
+            "category",
+            "tasting_notes",
+            "caffeine_type",
+            "roast_level",
+            "origin_country",
+            "is_visible",
+            "image",
+        ]
         widgets = {
             "image": forms.FileInput(
                 attrs={"accept": "image/*"}

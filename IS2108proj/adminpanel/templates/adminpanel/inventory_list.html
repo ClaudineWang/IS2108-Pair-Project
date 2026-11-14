@@ -28,13 +28,18 @@
         background-color: var(--cream);
     }
 
-    .status-visible {
-        color: green;
+    .stock-low {
+        color: #a45b20;
         font-weight: bold;
     }
 
-    .status-hidden {
-        color: red;
+    .stock-out {
+        color: #9a3e32;
+        font-weight: bold;
+    }
+
+    .stock-good {
+        color: #38664b;
         font-weight: bold;
     }
 </style>
@@ -93,7 +98,15 @@
             <td>{{ product.name }}</td>
             <td>{{ product.category.get_name_display }}</td>
             <td>{{ product.stock_level }}</td>
-            <td>{{ product.stock_status }}</td>
+            <td>
+                {% if product.stock_status == "Out of Stock" %}
+                    <span class="stock-out">{{ product.stock_status }}</span>
+                {% elif product.stock_status == "Low in Stock" %}
+                    <span class="stock-low">{{ product.stock_status }}</span>
+                {% else %}
+                    <span class="stock-good">{{ product.stock_status }}</span>
+                {% endif %}
+            </td>
             <td>
                 <a href="{% url 'adminpanel:inventory_update' product.id %}">View / Edit</a>
             </td>

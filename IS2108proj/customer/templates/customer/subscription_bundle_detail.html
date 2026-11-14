@@ -71,7 +71,7 @@
     </style>
 {% endblock %}
 {% block content %}
-        <a class="back" href="{% url 'bundles:list' %}">← All subscriptions</a>
+        <a class="back" href="{% url 'core:product_list' %}">← Back to shop</a>
         <section class="overview">
             {% for item in bundle.bundle_items.all %}
                 {% if forloop.first %}
