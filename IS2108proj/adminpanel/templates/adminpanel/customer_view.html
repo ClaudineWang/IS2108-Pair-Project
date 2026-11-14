@@ -4,6 +4,40 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
+<style>
+    .customer-order-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        margin: 12px 0 20px;
+    }
+
+    .customer-order-table {
+        width: 100%;
+        min-width: 620px;
+        border-collapse: collapse;
+        border: 1px solid var(--line);
+        background: white;
+    }
+
+    .customer-order-table th,
+    .customer-order-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+    }
+
+    .customer-order-table th {
+        background: var(--cream);
+        color: var(--coffee-dark);
+        font-weight: 700;
+    }
+
+    .customer-order-table tr:last-child td {
+        border-bottom: 0;
+    }
+</style>
+
 <p>
     <strong>Customer:</strong>
     {{ customer.user.get_full_name }}
@@ -26,7 +60,7 @@
 
 <p>
     <strong>Registration Date:</strong>
-    {{ customer.created_at|date:"F j, Y" }}
+    {{ customer.created_at|date:"d/m/Y" }}
 </p>
 
 <hr>
@@ -45,7 +79,8 @@
 
 <h3>Recent Orders:</h3>
 
-<table>
+<div class="customer-order-table-wrapper">
+<table class="customer-order-table">
     <thead>
         <tr>
             <th>Order ID</th>
@@ -59,7 +94,7 @@
         {% for order in customer_recent_orders %}
         <tr>
             <td>{{ order.id }}</td>
-            <td>{{ order.created_at|date:"F j, Y" }}</td>
+            <td>{{ order.created_at|date:"d/m/Y" }}</td>
             <td>{{ order.get_order_type_display }}</td>
             <td>{{ selected_currency }} {{ order.display_grand_total|floatformat:2 }}</td>
             <td>{{ order.get_delivery_status_display }}</td>
@@ -71,6 +106,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <a href="{% url 'adminpanel:customer_list' %}">Cancel</a>
 {% endblock %}

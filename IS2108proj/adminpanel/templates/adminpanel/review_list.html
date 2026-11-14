@@ -46,7 +46,7 @@
 
         {% for value, label in rating_choices %}
         <option value="{{ value }}" {% if rating_filter == value|stringformat:"s" %} selected {% endif %}>
-            {{ label }}
+            {{ value }}
         </option>
         {% endfor %}
     </select>

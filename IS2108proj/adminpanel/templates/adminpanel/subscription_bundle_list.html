@@ -90,7 +90,7 @@
         <tr>
             <td>{{ subscription_bundle.name }}</td>
             <td>{{ selected_currency }} {{ subscription_bundle.display_price|floatformat:2 }}</td>
-            <td>{{ subscription_bundle.billing_frequency }}</td>
+            <td>{{ subscription_bundle.get_billing_frequency_display }}</td>
             <td>{{ subscription_bundle.total_items }}</td>
             <td>{% if subscription_bundle.is_active %}
                 <span class="status-active">Active</span>

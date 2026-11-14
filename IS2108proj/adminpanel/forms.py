@@ -52,7 +52,7 @@ class ProductForm(forms.ModelForm):
 class InventoryForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["stock_level", "reorder_threshold", "is_visible"]
+        fields = ["stock_level", "reorder_threshold"]
 
 class OrderForm(forms.ModelForm):
     class Meta:

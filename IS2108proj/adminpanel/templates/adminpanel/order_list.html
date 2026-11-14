@@ -77,12 +77,11 @@
     <select name="order_type">
         <option value="">All Order Types</option>
 
-        <option value="subscription" {% if order_type_filter == "subscription" %}selected{% endif %}>
-            Subscription
+        {% for order_type in order_types %}
+        <option value="{{ order_type.0 }}" {% if order_type_filter == order_type.0 %}selected{% endif %}>
+            {{ order_type.1 }}
         </option>
-        <option value="one_time" {% if order_type_filter == "one_time" %}selected{% endif %}>
-            One-time
-        </option>
+        {% endfor %}
     </select>
 
 
