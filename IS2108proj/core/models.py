@@ -88,8 +88,8 @@ class SubscriptionBundle(models.Model):
 class CustomerSubscription(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
-        ('paused', 'Paused'),
-        ('cancelled', 'Cancelled')
+        ('cancelled', 'Cancelled'),
+        
 
     ]
     customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='subscriptions')

@@ -579,7 +579,7 @@ def cancel_subscription(request, subscription_id):
         CustomerSubscription,
         pk=subscription_id,
         customer__user=request.user,
-        status__in=("active", "paused"),
+        status="active",
     )
     subscription.status = "cancelled"
     subscription.save(update_fields=["status"])
