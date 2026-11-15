@@ -22,6 +22,30 @@ python manage.py runserver
 
 Open the application at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
+### Load the sample SQLite data
+
+After running the migrations, stop the development server and run the following commands from the project root:
+
+```bash
+cd IS2108proj
+cp -n db.sqlite3 db.sqlite3.before-seed
+sqlite3 db.sqlite3 < sql/seed_data.sql
+```
+
+The SQL file loads the sample products, subscription bundles, orders, subscriptions, and demo accounts. It also creates the demo logins listed below. The seed script clears and recreates application data, so only run it when you do not need to preserve existing products, orders, carts, subscriptions, or customer profiles.
+
+To create orders for subscription deliveries whose scheduled date has arrived, run this command daily using a scheduler such as cron or Windows Task Scheduler:
+
+```bash
+python manage.py process_due_subscriptions
+```
+
+For testing, a specific processing date can be supplied:
+
+```bash
+python manage.py process_due_subscriptions --date 2026-11-20
+```
+
 
 ## Instructions
 
