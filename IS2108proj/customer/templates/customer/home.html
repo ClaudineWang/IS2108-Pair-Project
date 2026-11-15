@@ -234,7 +234,7 @@
 {% block content %}
                 <section class="welcome">
                     <div>
-                        <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}!</h1>
+                        <h1>{% if show_first_welcome %}Welcome{% else %}Welcome back{% endif %}, {{ request.user.first_name|default:request.user.username }}!</h1>
                         <p>Enjoy freshly roasted coffee, tailored to your taste.</p>
                     </div>
                     <a class="quiz-link" href="{% url 'customer:customer_questionnaire' %}">Take the coffee preference quiz</a>

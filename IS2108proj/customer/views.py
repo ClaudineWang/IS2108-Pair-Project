@@ -116,6 +116,7 @@ def customer_onboarding(request):
                     },
                 )
 
+            request.session["show_first_welcome"] = True
             return redirect("customer:customer_home")
     else:
         form = CustomerOnboardingForm(
@@ -293,6 +294,8 @@ def customer_home(request):
     if not _is_staff_preview(request.user) and not _customer_onboarding_complete(request.user):
         return redirect("customer:customer_onboarding")
 
+    show_first_welcome = request.session.pop("show_first_welcome", False)
+
     latest_response = (
         QuestionnaireResponse.objects.filter(customer=request.user)
         .select_related("preferred_category")
@@ -335,6 +338,7 @@ def customer_home(request):
         cart_count = sum(item.quantity for item in request.user.cart.items.all())
 
     context = {
+        "show_first_welcome": show_first_welcome,
         "latest_response": latest_response,
         "recommended_products": recommended_products,
         "featured_products": featured_products,
