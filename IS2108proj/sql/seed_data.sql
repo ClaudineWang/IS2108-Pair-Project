@@ -111,7 +111,8 @@ INSERT INTO core_bundleitem (id, quantity, product_id, subscription_bundle_id) V
     (8, 1, 9, 3);
 
 -- Seed customer users without overwriting an existing account with the same
--- username. Password '!' is Django's unusable-password marker.
+-- username. Password '!' is Django's unusable-password marker for the
+-- historical seed users. The demo accounts below use Django password hashes.
 INSERT OR IGNORE INTO auth_user (
     password, last_login, is_superuser, username, last_name, email,
     is_staff, is_active, date_joined, first_name
@@ -120,7 +121,9 @@ INSERT OR IGNORE INTO auth_user (
     ('!', NULL, 0, 'seed_ben', 'Lim', 'ben@example.com', 0, 1, '2026-01-21 09:00:00', 'Ben'),
     ('!', NULL, 0, 'seed_carol', 'Lee', 'carol@example.com', 0, 1, '2026-01-22 09:00:00', 'Carol'),
     ('!', NULL, 0, 'seed_dylan', 'Wong', 'dylan@example.com', 0, 1, '2026-01-23 09:00:00', 'Dylan'),
-    ('!', NULL, 0, 'seed_emma', 'Ng', 'emma@example.com', 0, 1, '2026-01-24 09:00:00', 'Emma');
+    ('!', NULL, 0, 'seed_emma', 'Ng', 'emma@example.com', 0, 1, '2026-01-24 09:00:00', 'Emma'),
+    ('pbkdf2_sha256$1500000$pxd13FVgGZX39W41BImRjg$e9BgPagtVgg1Gj596MGCQjjY2T+nS9TmslZXtDx0P+g=', NULL, 0, 'customer1', 'Customer', 'customer1@example.com', 0, 1, '2026-01-25 09:00:00', 'Demo'),
+    ('pbkdf2_sha256$1500000$Tl4bqj5tJWzCbCaytOSMJY$p6RB23aZEEL6oBIbiUjQiiqaR/vuXu5cerBlWsAkS5w=', NULL, 0, 'admin1', 'Admin', 'admin1@example.com', 1, 1, '2026-01-25 09:05:00', 'Demo');
 
 INSERT INTO core_customerprofile (
     id, phone_number, created_at, user_id, delivery_address
@@ -139,7 +142,10 @@ INSERT INTO core_customerprofile (
         '40 Bukit Timah Road, Singapore 259835'),
     (5, '+65 9000 1005', '2026-01-24 09:05:00',
         (SELECT id FROM auth_user WHERE username = 'seed_emma'),
-        '50 East Coast Road, Singapore 428769');
+        '50 East Coast Road, Singapore 428769'),
+    (6, '+65 9000 2001', '2026-01-25 09:10:00',
+        (SELECT id FROM auth_user WHERE username = 'customer1'),
+        '60 Marina View, Singapore 018960');
 
 INSERT INTO core_customersubscription (
     id, start_date, next_delivery_date, delivery_address,
