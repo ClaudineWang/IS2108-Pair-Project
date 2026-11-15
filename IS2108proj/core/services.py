@@ -84,20 +84,24 @@ def place_order_from_cart(cart, customer, delivery_address):
     return order
 
 
-@transaction.atomic
-def start_subscription(bundle, customer, delivery_address):
-    customer = CustomerProfile.objects.select_for_update().get(pk=customer.pk)
-    bundle = SubscriptionBundle.objects.select_for_update().get(
-        pk=bundle.pk,
-        is_active=True,
+def _next_subscription_delivery_date(bundle, from_date):
+    return from_date + (
+        relativedelta(years=1)
+        if bundle.billing_frequency == "yearly"
+        else relativedelta(months=1)
     )
-    if CustomerSubscription.objects.filter(
-        customer=customer,
-        bundle=bundle,
-        status="active",
-    ).exists():
-        raise InsufficientStockError("You already have an active subscription to this bundle.")
 
+
+def _create_subscription_order_locked(subscription, scheduled_delivery_date):
+    """Create one subscription order while the subscription is locked."""
+    existing_order = Order.objects.filter(
+        subscription=subscription,
+        scheduled_delivery_date=scheduled_delivery_date,
+    ).first()
+    if existing_order:
+        return existing_order
+
+    bundle = subscription.bundle
     bundle_items = list(
         BundleItem.objects.select_for_update()
         .filter(subscription_bundle=bundle)
@@ -105,7 +109,7 @@ def start_subscription(bundle, customer, delivery_address):
         .order_by("product_id")
     )
     if not bundle_items:
-        raise InsufficientStockError("This bundle is not ready for enrollment yet.")
+        raise InsufficientStockError("This bundle is not ready for delivery yet.")
 
     products = {
         product.pk: product
@@ -128,25 +132,19 @@ def start_subscription(bundle, customer, delivery_address):
             + ". Please try again later."
         )
 
-    today = timezone.localdate()
-    next_delivery_date = today + (
-        relativedelta(years=1)
-        if bundle.billing_frequency == "yearly"
-        else relativedelta(months=1)
-    )
-    subscription = CustomerSubscription.objects.create(
-        customer=customer,
-        bundle=bundle,
-        next_delivery_date=next_delivery_date,
+    delivery_address = (
+        subscription.delivery_address
+        or subscription.customer.delivery_address
+        or ""
     )
     order = Order.objects.create(
-        customer=customer,
+        customer=subscription.customer,
         subscription=subscription,
         order_type="subscription",
         total_amount=bundle.price_per_delivery,
         delivery_address=delivery_address,
         delivery_fee=Decimal("0.00"),
-        grand_total=bundle.price_per_delivery,
+        scheduled_delivery_date=scheduled_delivery_date,
     )
 
     retail_total = sum(
@@ -201,7 +199,56 @@ def start_subscription(bundle, customer, delivery_address):
         product.stock_level -= item.quantity
         product.save(update_fields=["stock_level"])
     OrderItem.objects.bulk_create(order_items)
+    return order
+
+
+@transaction.atomic
+def start_subscription(bundle, customer, delivery_address):
+    customer = CustomerProfile.objects.select_for_update().get(pk=customer.pk)
+    bundle = SubscriptionBundle.objects.select_for_update().get(
+        pk=bundle.pk,
+        is_active=True,
+    )
+    if CustomerSubscription.objects.filter(
+        customer=customer,
+        bundle=bundle,
+        status="active",
+    ).exists():
+        raise InsufficientStockError("You already have an active subscription to this bundle.")
+
+    today = timezone.localdate()
+    subscription = CustomerSubscription.objects.create(
+        customer=customer,
+        bundle=bundle,
+        next_delivery_date=_next_subscription_delivery_date(bundle, today),
+        delivery_address=delivery_address,
+    )
+    order = _create_subscription_order_locked(subscription, today)
     return subscription, order
+
+
+@transaction.atomic
+def create_due_subscription_order(subscription, as_of=None):
+    """Create the next order when an active subscription reaches its date."""
+    subscription = (
+        CustomerSubscription.objects.select_for_update()
+        .select_related("bundle", "customer")
+        .get(pk=subscription.pk)
+    )
+    if subscription.status != "active" or not subscription.next_delivery_date:
+        return None
+
+    as_of = as_of or timezone.localdate()
+    if subscription.next_delivery_date > as_of:
+        return None
+
+    scheduled_delivery_date = subscription.next_delivery_date
+    order = _create_subscription_order_locked(
+        subscription,
+        scheduled_delivery_date,
+    )
+    advance_subscription_delivery(subscription)
+    return order
 
 
 def calculate_grand_total(order):
@@ -228,10 +275,8 @@ def advance_subscription_delivery(subscription):
     if not subscription.next_delivery_date:
         return
 
-    if subscription.bundle.billing_frequency == "monthly":
-        subscription.next_delivery_date += relativedelta(months=1)
-
-    elif subscription.bundle.billing_frequency == "yearly":
-        subscription.next_delivery_date += relativedelta(years=1)
-
+    subscription.next_delivery_date = _next_subscription_delivery_date(
+        subscription.bundle,
+        subscription.next_delivery_date,
+    )
     subscription.save(update_fields=["next_delivery_date"])

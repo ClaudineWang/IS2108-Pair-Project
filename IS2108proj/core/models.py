@@ -104,6 +104,7 @@ class CustomerSubscription(models.Model):
     bundle = models.ForeignKey(SubscriptionBundle, on_delete=models.PROTECT, related_name='customer_subscriptions')
     start_date = models.DateTimeField(auto_now_add=True)
     next_delivery_date = models.DateField(null=True, blank=True)
+    delivery_address = models.TextField(blank=True, default="")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
 
@@ -129,6 +130,7 @@ class Order(models.Model):
     delivery_address = models.TextField()
     delivery_status = models.CharField(max_length=20, choices=DELIVERY_STATUS, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+    scheduled_delivery_date = models.DateField(null=True, blank=True)
 
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -145,6 +147,14 @@ class Order(models.Model):
             models.CheckConstraint(
                 condition=Q(grand_total=F("total_amount") + F("delivery_fee")),
                 name="order_total_matches_parts",
+            ),
+            models.UniqueConstraint(
+                fields=("subscription", "scheduled_delivery_date"),
+                condition=Q(
+                    order_type="subscription",
+                    scheduled_delivery_date__isnull=False,
+                ),
+                name="unique_subscription_delivery_order",
             ),
         ]
 

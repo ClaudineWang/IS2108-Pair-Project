@@ -104,7 +104,7 @@
                             {% endfor %}
                             <button class="button" type="submit">Subscribe — {{ selected_currency }} {{ bundle.price_per_delivery|currency_amount:currency_rate|floatformat:2 }}</button>
                         </form>
-                        <p class="subscribe-note">Your first delivery order is placed now. This demo records the next delivery date, but does not automatically charge or create future orders.</p>
+                        <p class="subscribe-note">Your first delivery order is placed now. Future subscription orders are created automatically when their scheduled delivery date arrives. This demo does not automatically charge your payment method.</p>
                     {% else %}
                         <p class="notice">Please <a href="{% url 'customer:customer_login' %}?next={{ request.path|urlencode }}">sign in</a> to subscribe.</p>
                     {% endif %}

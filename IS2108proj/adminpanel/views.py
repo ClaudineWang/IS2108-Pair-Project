@@ -6,7 +6,6 @@ from core.models import Order, Product, Category, CustomerProfile, SubscriptionB
 from django.db import models, transaction
 from django.db.models import Q, Count, F, Sum
 from django.db.models.functions import Coalesce, TruncMonth
-from core.services import advance_subscription_delivery
 from core.currency import RATES as CURRENCY_RATES, get_selected_currency
 from django.views.decorators.http import require_POST
 from .decorators import staff_required
@@ -291,12 +290,6 @@ def order_update(request, order_id):
                         Product.objects.filter(pk=item.product_id).update(
                             stock_level=models.F("stock_level") + item.quantity
                         )
-                if (
-                    previous_status != "delivered"
-                    and updated_order.delivery_status == "delivered"
-                    and updated_order.subscription
-                ):
-                    advance_subscription_delivery(updated_order.subscription)
                 return redirect("adminpanel:order_list")
     else:
         form = OrderForm(instance=order)
