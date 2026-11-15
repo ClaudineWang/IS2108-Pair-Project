@@ -142,40 +142,42 @@ INSERT INTO core_customerprofile (
         '50 East Coast Road, Singapore 428769');
 
 INSERT INTO core_customersubscription (
-    id, start_date, next_delivery_date, bundle_id, customer_id, status
+    id, start_date, next_delivery_date, delivery_address,
+    bundle_id, customer_id, status
 ) VALUES
-    (1, '2026-02-01 09:00:00', '2026-11-20', 1, 1, 'active'),
-    (2, '2026-02-05 09:00:00', '2026-11-25', 1, 2, 'active'),
-    (3, '2026-02-12 09:00:00', '2026-11-18', 2, 3, 'active'),
-    (4, '2026-03-01 09:00:00', '2026-11-28', 2, 4, 'active'),
-    (5, '2026-03-15 09:00:00', '2026-11-30', 2, 5, 'active'),
-    (6, '2026-04-01 09:00:00', NULL, 3, 1, 'cancelled'),
-    (7, '2026-05-10 09:00:00', '2026-12-10', 1, 3, 'active'),
-    (8, '2026-01-15 09:00:00', NULL, 1, 4, 'cancelled');
+    (1, '2026-02-01 09:00:00', '2026-11-20', '10 Orchard Road, Singapore 238823', 1, 1, 'active'),
+    (2, '2026-02-05 09:00:00', '2026-11-25', '20 Tiong Bahru Road, Singapore 168732', 1, 2, 'active'),
+    (3, '2026-02-12 09:00:00', '2026-11-18', '30 Tampines Street 21, Singapore 529392', 2, 3, 'active'),
+    (4, '2026-03-01 09:00:00', '2026-11-28', '40 Bukit Timah Road, Singapore 259835', 2, 4, 'active'),
+    (5, '2026-03-15 09:00:00', '2026-11-30', '50 East Coast Road, Singapore 428769', 2, 5, 'active'),
+    (6, '2026-04-01 09:00:00', NULL, '10 Orchard Road, Singapore 238823', 3, 1, 'cancelled'),
+    (7, '2026-05-10 09:00:00', '2026-12-10', '30 Tampines Street 21, Singapore 529392', 1, 3, 'active'),
+    (8, '2026-01-15 09:00:00', NULL, '40 Bukit Timah Road, Singapore 259835', 1, 4, 'cancelled');
 
 -- Historical orders provide enough variation for sales and bundle analytics.
 INSERT INTO core_order (
     id, order_type, total_amount, delivery_address, delivery_status,
-    created_at, delivery_fee, grand_total, customer_id, subscription_id
+    created_at, scheduled_delivery_date, delivery_fee, grand_total,
+    customer_id, subscription_id
 ) VALUES
-    (1, 'one-time', 37.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-02-03 10:00:00', 5.00, 42.00, 1, NULL),
-    (2, 'one-time', 16.00, '20 Tiong Bahru Road, Singapore 168732', 'delivered', '2026-02-18 11:00:00', 5.00, 21.00, 2, NULL),
-    (3, 'subscription', 35.00, '30 Tampines Street 21, Singapore 529392', 'delivered', '2026-03-12 09:30:00', 0.00, 35.00, 3, 3),
-    (4, 'one-time', 18.50, '40 Bukit Timah Road, Singapore 259835', 'delivered', '2026-03-25 13:00:00', 5.00, 23.50, 4, NULL),
-    (5, 'subscription', 42.00, '50 East Coast Road, Singapore 428769', 'delivered', '2026-04-08 09:15:00', 0.00, 42.00, 5, 5),
-    (6, 'subscription', 32.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-04-20 09:00:00', 0.00, 32.00, 1, 1),
-    (7, 'one-time', 55.50, '20 Tiong Bahru Road, Singapore 168732', 'delivered', '2026-05-05 14:00:00', 0.00, 55.50, 2, NULL),
-    (8, 'one-time', 28.00, '30 Tampines Street 21, Singapore 529392', 'delivered', '2026-05-19 15:00:00', 0.00, 28.00, 3, NULL),
-    (9, 'subscription', 40.50, '40 Bukit Timah Road, Singapore 259835', 'delivered', '2026-06-02 09:00:00', 0.00, 40.50, 4, 4),
-    (10, 'one-time', 17.00, '50 East Coast Road, Singapore 428769', 'delivered', '2026-06-21 12:00:00', 5.00, 22.00, 5, NULL),
-    (11, 'one-time', 27.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-07-04 10:30:00', 0.00, 27.00, 1, NULL),
-    (12, 'subscription', 32.50, '20 Tiong Bahru Road, Singapore 168732', 'delivered', '2026-07-18 09:00:00', 0.00, 32.50, 2, 2),
-    (13, 'subscription', 30.00, '30 Tampines Street 21, Singapore 529392', 'delivered', '2026-08-06 09:00:00', 0.00, 30.00, 3, 7),
-    (14, 'one-time', 15.50, '40 Bukit Timah Road, Singapore 259835', 'shipped', '2026-08-28 16:00:00', 5.00, 20.50, 4, NULL),
-    (15, 'subscription', 40.50, '50 East Coast Road, Singapore 428769', 'roasting', '2026-09-12 09:00:00', 0.00, 40.50, 5, 5),
-    (16, 'one-time', 32.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-09-30 11:00:00', 0.00, 32.00, 1, NULL),
-    (17, 'one-time', 43.50, '20 Tiong Bahru Road, Singapore 168732', 'pending', '2026-10-18 14:30:00', 0.00, 43.50, 2, NULL),
-    (18, 'one-time', 18.50, '30 Tampines Street 21, Singapore 529392', 'pending', '2026-11-05 10:00:00', 5.00, 23.50, 3, NULL);
+    (1, 'one-time', 37.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-02-03 10:00:00', NULL, 5.00, 42.00, 1, NULL),
+    (2, 'one-time', 16.00, '20 Tiong Bahru Road, Singapore 168732', 'delivered', '2026-02-18 11:00:00', NULL, 5.00, 21.00, 2, NULL),
+    (3, 'subscription', 35.00, '30 Tampines Street 21, Singapore 529392', 'delivered', '2026-03-12 09:30:00', '2026-03-12', 0.00, 35.00, 3, 3),
+    (4, 'one-time', 18.50, '40 Bukit Timah Road, Singapore 259835', 'delivered', '2026-03-25 13:00:00', NULL, 5.00, 23.50, 4, NULL),
+    (5, 'subscription', 42.00, '50 East Coast Road, Singapore 428769', 'delivered', '2026-04-08 09:15:00', '2026-04-08', 0.00, 42.00, 5, 5),
+    (6, 'subscription', 32.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-04-20 09:00:00', '2026-04-20', 0.00, 32.00, 1, 1),
+    (7, 'one-time', 55.50, '20 Tiong Bahru Road, Singapore 168732', 'delivered', '2026-05-05 14:00:00', NULL, 0.00, 55.50, 2, NULL),
+    (8, 'one-time', 28.00, '30 Tampines Street 21, Singapore 529392', 'delivered', '2026-05-19 15:00:00', NULL, 0.00, 28.00, 3, NULL),
+    (9, 'subscription', 40.50, '40 Bukit Timah Road, Singapore 259835', 'delivered', '2026-06-02 09:00:00', '2026-06-02', 0.00, 40.50, 4, 4),
+    (10, 'one-time', 17.00, '50 East Coast Road, Singapore 428769', 'delivered', '2026-06-21 12:00:00', NULL, 5.00, 22.00, 5, NULL),
+    (11, 'one-time', 27.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-07-04 10:30:00', NULL, 0.00, 27.00, 1, NULL),
+    (12, 'subscription', 32.50, '20 Tiong Bahru Road, Singapore 168732', 'delivered', '2026-07-18 09:00:00', '2026-07-18', 0.00, 32.50, 2, 2),
+    (13, 'subscription', 30.00, '30 Tampines Street 21, Singapore 529392', 'delivered', '2026-08-06 09:00:00', '2026-08-06', 0.00, 30.00, 3, 7),
+    (14, 'one-time', 15.50, '40 Bukit Timah Road, Singapore 259835', 'shipped', '2026-08-28 16:00:00', NULL, 5.00, 20.50, 4, NULL),
+    (15, 'subscription', 40.50, '50 East Coast Road, Singapore 428769', 'roasting', '2026-09-12 09:00:00', '2026-09-12', 0.00, 40.50, 5, 5),
+    (16, 'one-time', 32.00, '10 Orchard Road, Singapore 238823', 'delivered', '2026-09-30 11:00:00', NULL, 0.00, 32.00, 1, NULL),
+    (17, 'one-time', 43.50, '20 Tiong Bahru Road, Singapore 168732', 'pending', '2026-10-18 14:30:00', NULL, 0.00, 43.50, 2, NULL),
+    (18, 'one-time', 18.50, '30 Tampines Street 21, Singapore 529392', 'pending', '2026-11-05 10:00:00', NULL, 5.00, 23.50, 3, NULL);
 
 INSERT INTO core_orderitem (id, quantity, price_at_purchase, order_id, product_id) VALUES
     (1, 2, 18.50, 1, 1),

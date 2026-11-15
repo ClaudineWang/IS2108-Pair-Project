@@ -1,18 +1,103 @@
+from datetime import date
+
 from django.db import IntegrityError, transaction
+from django.core.management import call_command
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
 from .models import (
+    BundleItem,
     Cart,
     CartItem,
     Category,
     CustomerProfile,
+    CustomerSubscription,
     Order,
     OrderItem,
     Product,
     Review,
     SubscriptionBundle,
 )
+
+
+class SubscriptionAutomationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="subscription-customer",
+            password="test-pass-123",
+        )
+        self.profile = CustomerProfile.objects.create(
+            user=self.user,
+            delivery_address="1 Coffee Lane",
+        )
+        self.category = Category.objects.create(name="whole_bean")
+        self.product = Product.objects.create(
+            name="Monthly Subscription Coffee",
+            price="18.00",
+            category=self.category,
+            caffeine_type="caffeinated",
+            roast_level="medium",
+            stock_level=10,
+        )
+        self.bundle = SubscriptionBundle.objects.create(
+            name="Monthly Coffee Box",
+            price_per_delivery="32.00",
+            billing_frequency="monthly",
+            is_active=True,
+        )
+        BundleItem.objects.create(
+            subscription_bundle=self.bundle,
+            product=self.product,
+            quantity=2,
+        )
+        self.subscription = CustomerSubscription.objects.create(
+            customer=self.profile,
+            bundle=self.bundle,
+            next_delivery_date=date(2026, 11, 1),
+            delivery_address="12 Subscription Street",
+        )
+
+    def test_due_subscription_creates_order_and_advances_date(self):
+        call_command(
+            "process_due_subscriptions",
+            as_of="2026-11-15",
+        )
+
+        order = Order.objects.get(subscription=self.subscription)
+        self.assertEqual(order.delivery_status, "pending")
+        self.assertEqual(order.scheduled_delivery_date, date(2026, 11, 1))
+        self.assertEqual(order.delivery_address, "12 Subscription Street")
+        self.assertEqual(order.items.get().quantity, 2)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock_level, 8)
+        self.subscription.refresh_from_db()
+        self.assertEqual(self.subscription.next_delivery_date, date(2026, 12, 1))
+
+    def test_running_processor_again_does_not_duplicate_order(self):
+        call_command("process_due_subscriptions", as_of="2026-11-15")
+        call_command("process_due_subscriptions", as_of="2026-11-15")
+
+        self.assertEqual(
+            Order.objects.filter(subscription=self.subscription).count(),
+            1,
+        )
+
+    def test_future_subscription_is_not_processed_early(self):
+        call_command("process_due_subscriptions", as_of="2026-10-31")
+
+        self.assertFalse(Order.objects.filter(subscription=self.subscription).exists())
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock_level, 10)
+
+    def test_insufficient_stock_leaves_subscription_due(self):
+        self.product.stock_level = 1
+        self.product.save(update_fields=["stock_level"])
+
+        call_command("process_due_subscriptions", as_of="2026-11-15")
+
+        self.assertFalse(Order.objects.filter(subscription=self.subscription).exists())
+        self.subscription.refresh_from_db()
+        self.assertEqual(self.subscription.next_delivery_date, date(2026, 11, 1))
 
 
 class CartPageTests(TestCase):
