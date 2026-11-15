@@ -5,7 +5,7 @@ Group number 13
 | Full Name | Student Number | Email | Contact Number |
 |---|---|---|---|
 | Claudine Wang Yan Ning | A0321840N | e1524747@u.nus.edu | 97289882 |
-| Sakshi Vashist | A0321888R | e1524795@u.nus.edu | 96407200 |
+| Sakshi Vashist (Group Leader) | A0321888R | e1524795@u.nus.edu | 96407200 |
 
 ## How to Run
 
